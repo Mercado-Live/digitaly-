@@ -1,99 +1,384 @@
-/*
-╔══════════════════════════════════════════════════════════════════════════════╗
-║             DATOS DE EJEMPLO (Mock Data)                                    ║
-║                                                                             ║
-║  En arquitectura de software, SEPARAR los datos de la presentación          ║
-║  es uno de los principios más importantes (Separation of Concerns).         ║
-║                                                                             ║
-║  Este archivo es la "capa de datos". Si mañana estos anuncios vienen        ║
-║  de una API REST, de Firebase, de SQLite o de un archivo JSON,              ║
-║  solo cambias este archivo. Los componentes que los RENDERIZAN              ║
-║  no necesitan saber de dónde vienen los datos.                              ║
-║                                                                             ║
-║  Esto se llama "abstracción de fuente de datos" y es primo hermano          ║
-║  del patrón REPOSITORY en Domain-Driven Design (DDD).                       ║
-║                                                                             ║
-║  El beneficio: si el backend cambia, tocas 1 archivo, no 20.                  ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-*/
-
-/*
- * Importamos el CONTRATO (interface) que define cómo debe lucir
- * un Announcement. Esto NO es azúcar sintáctico — es una GUARDA
- * de compilación. Si alguien borra una propiedad requerida de
- * Announcement, TypeScript nos avisará AQUÍ antes de que el
- * programa se ejecute.
- *
- * En proyectos grandes, un cambio en el contrato puede romper
- * 50 archivos. TypeScript te dice cuáles son. Sin types,
- * descubres la rotura cuando el usuario reporta un crash.
- */
 import type { Announcement } from "../types";
 
-/*
- * `as const` SATISFIES el contrato Announcement[]
- *
- * `as const` es una "afirmación de constancia" en TypeScript.
- * Sin ella, TypeScript inferiría los tipos como `string` genérico.
- * Con `as const`, infiere los VALORES LITERALES como los tipos.
- *
- * Ejemplo:
- *   const x = "hola"      → tipo: string
- *   const x = "hola" as const → tipo: "hola" (el literal exacto)
- *
- * ¿Por qué importa? Porque sin `as const`, podrías poner cualquier
- * string en `date`. Con `as const`, TypeScript sabe que date es
- * exactamente "2025-01-15" y no cualquier string.
- *
- * `satisfies Announcement[]` es una GUARDA de tipo.
- * Verifica que el array cumple con el contrato Announcement[],
- * pero INFIERE el tipo más específico posible (gracias a `as const`).
- *
- * Sin `satisfies`: el tipo sería `Announcement[]` (pierdes los literales).
- * Sin `as const`: el tipo sería `string[]` (pierdes toda especificidad).
- * Juntos: "verifica que cumple el contrato, pero manten los valores exactos".
- */
 export const ANNOUNCEMENTS = [
   {
     id: "1",
     title: "Bienvenidos a la Cartelera Digital",
     description:
-      "Este es un sistema de visualización de anuncios. " +
-      "Los anuncios rotan automáticamente cada 5 segundos. " +
-      "Toca la pantalla para pausar la rotación.",
+      "Sistema de visualización con layouts dinámicos. " +
+      "Video + formato historia + variaciones de distribución.",
     date: "2025-01-15",
-    backgroundColor: "#1a1a2e",
+    backgroundColor: "#0f0f23",
+    layoutId: "video-left-story-right",
+    content: {
+      video: [
+        {
+          type: "video",
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+          title: "Bienvenida",
+        },
+      ],
+      story: [
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/bienvenida1/360/640",
+          title: "Bienvenidos",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/bienvenida2/360/640",
+          title: "Cartelera Digital",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/bienvenida3/360/640",
+          title: "Sistema de Layouts",
+        },
+      ],
+    },
   },
   {
     id: "2",
-    title: "Arquitectura de Software",
+    title: "Arquitectura de Layouts",
     description:
-      "Separación de concerns: tipos en types/, datos en data/, " +
-      "componentes en components/, rutas en app/. " +
-      "Cada carpeta tiene UNA responsabilidad.",
+      "Múltiples distribuciones: video izquierda, historia derecha. " +
+      "Cada layout optimizado para diferentes tipos de contenido.",
     date: "2025-01-16",
-    backgroundColor: "#16213e",
+    backgroundColor: "#1a0a2e",
+    layoutId: "video-right-story-left",
+    content: {
+      video: [
+        {
+          type: "video",
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+          title: "Arquitectura",
+        },
+      ],
+      story: [
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/arquitectura1/360/640",
+          title: "Layouts Dinámicos",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/arquitectura2/360/640",
+          title: "Video + Imagen",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/arquitectura3/360/640",
+          title: "10 Variaciones",
+        },
+      ],
+    },
   },
   {
     id: "3",
-    title: "React Native Bridge",
+    title: "Contenido Multimedia",
     description:
-      "React Native NO traduce JSX a código nativo línea por línea. " +
-      "Usa un BRIDGE (puente) asíncrono. El JS corre en un hilo separado " +
-      "y envía mensajes JSON serializados al hilo nativo. " +
-      "Con JSI (JavaScript Interface), ese puente es más directo.",
+      "Videos en bucle, historias de imágenes con avance automático, " +
+      "grids de imágenes. Cada área tiene su propio ciclo de vida.",
     date: "2025-01-17",
-    backgroundColor: "#0f3460",
+    backgroundColor: "#0a1a2e",
+    layoutId: "video-left-wide",
+    content: {
+      video: [
+        {
+          type: "video",
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+          title: "Multimedia",
+        },
+      ],
+      story: [
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/multimedia1/360/640",
+          title: "Videos",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/multimedia2/360/640",
+          title: "Imágenes",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/multimedia3/360/640",
+          title: "Storytelling Visual",
+        },
+      ],
+    },
   },
   {
     id: "4",
-    title: "Virtual DOM",
+    title: "Distribución Variable",
     description:
-      "React mantiene una copia virtual del árbol de componentes. " +
-      "Cuando cambia el estado, React compara (diffs) el Virtual DOM " +
-      "anterior con el nuevo y SOLO aplica las diferencias al DOM real. " +
-      "Eso se llama RECONCILIACIÓN y es por lo que React es rápido.",
+      "Cada slide puede usar un layout diferente. " +
+      "La cartelera alterna entre las 10 variaciones de distribución.",
     date: "2025-01-18",
-    backgroundColor: "#533483",
+    backgroundColor: "#2e0a1a",
+    layoutId: "video-left-narrow",
+    content: {
+      video: [
+        {
+          type: "video",
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+          title: "Distribución",
+        },
+      ],
+      story: [
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/distribucion1/360/640",
+          title: "Flexibilidad",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/distribucion2/360/640",
+          title: "Adaptabilidad",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/distribucion3/360/640",
+          title: "Variedad",
+        },
+      ],
+    },
   },
-] as const satisfies Announcement[];
+  {
+    id: "5",
+    title: "Layout Panorámico",
+    description:
+      "Distribución horizontal con video dominante. " +
+      "Ideal para contenido audiovisual con apoyo de imágenes.",
+    date: "2025-01-19",
+    backgroundColor: "#1a2e0a",
+    layoutId: "video-top-story-bottom",
+    content: {
+      video: [
+        {
+          type: "video",
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+          title: "Panorámico",
+        },
+      ],
+      story: [
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/panoramico1/640/360",
+          title: "Horizontal",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/panoramico2/640/360",
+          title: "Panorámica",
+        },
+      ],
+    },
+  },
+  {
+    id: "6",
+    title: "Grid de Imágenes",
+    description:
+      "Video a la izquierda con grid de 2x2 imágenes a la derecha. " +
+      "Perfecto para mostrar catálogos o portafolios.",
+    date: "2025-01-20",
+    backgroundColor: "#2e1a0a",
+    layoutId: "video-left-image-grid-right",
+    content: {
+      video: [
+        {
+          type: "video",
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+          title: "Grid",
+        },
+      ],
+      grid: [
+        {
+          type: "image",
+          url: "https://picsum.photos/seed/grid1/400/400",
+          title: "Imagen 1",
+        },
+        {
+          type: "image",
+          url: "https://picsum.photos/seed/grid2/400/400",
+          title: "Imagen 2",
+        },
+        {
+          type: "image",
+          url: "https://picsum.photos/seed/grid3/400/400",
+          title: "Imagen 3",
+        },
+        {
+          type: "image",
+          url: "https://picsum.photos/seed/grid4/400/400",
+          title: "Imagen 4",
+        },
+        {
+          type: "image",
+          url: "https://picsum.photos/seed/grid5/400/400",
+          title: "Imagen 5",
+        },
+        {
+          type: "image",
+          url: "https://picsum.photos/seed/grid6/400/400",
+          title: "Imagen 6",
+        },
+        {
+          type: "image",
+          url: "https://picsum.photos/seed/grid7/400/400",
+          title: "Imagen 7",
+        },
+        {
+          type: "image",
+          url: "https://picsum.photos/seed/grid8/400/400",
+          title: "Imagen 8",
+        },
+      ],
+    },
+  },
+  {
+    id: "7",
+    title: "Video Pantalla Completa",
+    description:
+      "Layout inmersivo: video ocupa toda la pantalla. " +
+      "Sin distracciones, máximo impacto visual.",
+    date: "2025-01-21",
+    backgroundColor: "#000000",
+    layoutId: "video-full",
+    content: {
+      video: [
+        {
+          type: "video",
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+          title: "Fullscreen",
+        },
+      ],
+    },
+  },
+  {
+    id: "8",
+    title: "Historias Visuales",
+    description:
+      "Formato historia a pantalla completa. " +
+      "Imágenes en secuencia automática tipo story.",
+    date: "2025-01-22",
+    backgroundColor: "#1a1a2e",
+    layoutId: "story-full",
+    content: {
+      story: [
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/story1/1080/1920",
+          title: "Historia 1",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/story2/1080/1920",
+          title: "Historia 2",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/story3/1080/1920",
+          title: "Historia 3",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/story4/1080/1920",
+          title: "Historia 4",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/story5/1080/1920",
+          title: "Historia 5",
+        },
+      ],
+    },
+  },
+  {
+    id: "9",
+    title: "Dos Historias Simultáneas",
+    description:
+      "Video con dos paneles de historia apilados. " +
+      "Múltiples mensajes en una sola vista.",
+    date: "2025-01-23",
+    backgroundColor: "#0a2e1a",
+    layoutId: "video-left-dual-story",
+    content: {
+      video: [
+        {
+          type: "video",
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+          title: "Dual",
+        },
+      ],
+      "story-top": [
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/dualtop1/360/640",
+          title: "Promo 1",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/dualtop2/360/640",
+          title: "Promo 2",
+        },
+      ],
+      "story-bottom": [
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/dualbottom1/360/640",
+          title: "Oferta 1",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/dualbottom2/360/640",
+          title: "Oferta 2",
+        },
+      ],
+    },
+  },
+  {
+    id: "10",
+    title: "Video Central Balanceado",
+    description:
+      "Video centrado con historias laterales simétricas. " +
+      "Distribución equilibrada para contenido premium.",
+    date: "2025-01-24",
+    backgroundColor: "#1a0a1a",
+    layoutId: "video-center-story-split",
+    content: {
+      video: [
+        {
+          type: "video",
+          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
+          title: "Balance",
+        },
+      ],
+      "story-left": [
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/balanceleft1/360/640",
+          title: "Izquierda",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/balanceleft2/360/640",
+          title: "Complemento",
+        },
+      ],
+      "story-right": [
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/balanceright1/360/640",
+          title: "Derecha",
+        },
+        {
+          type: "image-story",
+          url: "https://picsum.photos/seed/balanceright2/360/640",
+          title: "Soporte Visual",
+        },
+      ],
+    },
+  },
+] as const satisfies readonly Announcement[];

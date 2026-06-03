@@ -6,6 +6,7 @@
     "@expo/ui": "~56.0.15",
     "@react-native-tvos/config-tv": "^0.1.6",
     "expo": "~56.0.8",
+    "expo-av": "^16.0.8",
     "expo-constants": "~56.0.16",
     "expo-device": "~56.0.4",
     "expo-font": "~56.0.5",
@@ -43,7 +44,9 @@
   "private": true,
   "expo": {
     "install": {
-      "exclude": ["react-native"]
+      "exclude": [
+        "react-native"
+      ]
     }
   }
 }

@@ -30,15 +30,24 @@ src/
 │   └── index.tsx      ← Ruta "/" — punto de entrada
 │
 ├── components/        ← COMPONENTES REUTILIZABLES (UI)
+│   ├── layouts/            ← MOTOR DE DISTRIBUCIONES
+│   │   ├── layouts.ts      ← Registro de variaciones (10 layouts)
+│   │   └── LayoutEngine.tsx ← Motor que interpreta y renderiza layouts
+│   │
+│   ├── media/              ← COMPONENTES DE CONTENIDO MULTIMEDIA
+│   │   ├── VideoPlayer.tsx ← Reproduce video (expo-av)
+│   │   ├── StoryPanel.tsx  ← Muestra imágenes en formato historia
+│   │   └── ImageGrid.tsx   ← Grid 2×2 con paginación
+│   │
 │   ├── Billboard.tsx       ← Orquestador (container inteligente)
-│   ├── BillboardSlide.tsx  ← Tarjeta de anuncio (presentacional)
+│   ├── BillboardSlide.tsx  ← Slide que usa LayoutEngine según layoutId
 │   └── SlideIndicator.tsx  ← Dots de navegación (presentacional)
 │
 ├── data/              ← CAPA DE DATOS (mock, API, cache)
-│   └── announcements.ts   ← Anuncios de ejemplo
+│   └── announcements.ts   ← Anuncios de ejemplo con contenido multimedia
 │
 ├── types/             ← CONTRATOS (interfaces TypeScript)
-│   └── index.ts            ← interface Announcement
+│   └── index.ts            ← Announcement, MediaContent, LayoutDefinition
 │
 └── utils/             ← UTILIDADES
     └── tv.ts               ← TV detection, escalas, constantes
@@ -65,20 +74,49 @@ Separando, puedes cambiar la fuente de datos sin tocar la UI.
   └── <Stack> (_layout.tsx)
         └── <Billboard> (index.tsx → "/")
               │
-              │   Estado:  currentSlideIndex, isPaused
-              │   Efectos: setInterval (timer), scrollTo (sincronización)
-              │   Ref:     scrollViewRef
+              │   Estado:  currentSlideIndex, isPaused, isTVFocused,
+              │           forcedLayoutId
+              │   Efectos: setInterval (timer), scrollTo (sincronización),
+              │            TVEventHandler (control remoto)
+              │   Ref:     scrollViewRef, tvEventHandlerRef,
+              │            inactivityTimerRef, lastInteractionRef
               │
               ├── <ScrollView horizontal pagingEnabled>
               │     └── <View> (contenedor de slides, width = N × screenWidth)
-              │           ├── <BillboardSlide announcement={...} />
-              │           ├── <BillboardSlide announcement={...} />
-              │           ├── <BillboardSlide announcement={...} />
-              │           └── <BillboardSlide announcement={...} />
+              │           ├── <BillboardSlide announcement={0} isActive={true/false}>
+              │           │     └── <LayoutEngine layout={...} content={...}>
+              │           │           ├── <VideoPlayer />     (si el área es video)
+              │           │           ├── <StoryPanel />      (si el área es story)
+              │           │           └── <ImageGrid />       (si el área es grid)
+              │           ├── <BillboardSlide announcement={1} .../>
+              │           └── ... (10 slides en total)
               │
               ├── {isPaused && <PauseOverlay />}
+              │     └── Muestra "PAUSADO" + layout actual + instrucciones
               │
-              └── <SlideIndicator totalSlides={4} activeIndex={n} />
+              └── <SlideIndicator totalSlides={10} activeIndex={n} />
+```
+
+### Container vs. Presentational (Actualizado)
+
+| Componente | Tipo | Estado interno | Efectos |
+|---|---|---|---|
+| `Billboard` | **Container** (inteligente) | `currentSlideIndex`, `isPaused`, `isTVFocused`, `forcedLayoutId` | `setInterval`, `scrollTo`, `TVEventHandler`, `inactivityTimer` |
+| `BillboardSlide` | **Presentational** (tonto) | No | No |
+| `SlideIndicator` | **Presentational** (tonto) | No | No |
+| `LayoutEngine` | **Presentational** (tonto) | No | No |
+| `VideoPlayer` | **Presentational** (tonto, con refs) | No | `playAsync/pauseAsync` según `isActive` |
+| `StoryPanel` | **Presentational** (tonto) | `currentIndex` (interno, avance auto) | `setInterval` para avanzar imágenes |
+| `ImageGrid` | **Presentational** (tonto) | `page` (interno, paginación auto) | `setInterval` para avanzar páginas |
+
+```text
+NOTA: StoryPanel e ImageGrid tienen ESTADO INTERNO pero es estado de
+PRESENTACIÓN (qué imagen mostrar), no de NEGOCIO (qué datos mostrar).
+El estado de negocio sigue siendo manejado por Billboard.
+
+Esta es una excepción controlada al patrón container-presentational:
+el estado interno de avance de imágenes es responsabilidad del
+componente visual, no del orquestador.
 ```
 
 ### Container vs. Presentational
@@ -631,32 +669,75 @@ En móvil/web, estas props son ignoradas por react-native estándar.
 | **Dots indicator** | 10px activo, 8px inactivo | 15px activo, 12px inactivo (tvScale 1.5×) |
 | **Feedback visual** | Ninguno | Focus ring + overlay "Play/Pause para reanudar" |
 
-### 7.1 interface Announcement
+### 7.1 Tipos del Sistema de Layouts
 
+El sistema introduce nuevos contratos además de `Announcement`:
+
+**MediaContent** — una pieza individual de contenido multimedia:
+```typescript
+export interface MediaContent {
+  readonly type: "video" | "image" | "image-story";
+  readonly url: string;
+  readonly durationMs?: number;    // duración de visualización (ms)
+  readonly posterUrl?: string;     // imagen de portada para video
+  readonly title?: string;        // título opcional
+}
+```
+
+**LayoutAreaConfig** — una región del layout:
+```typescript
+export interface LayoutAreaConfig {
+  readonly id: string;           // identificador único del área
+  readonly type: "video" | "story" | "image-grid" | "text" | "stack";
+  readonly flex: number;         // proporción relativa
+  readonly direction?: "row" | "column";  // dirección interna (para story/stack)
+  readonly children?: LayoutAreaConfig[]; // sub-áreas (solo para stack)
+  readonly style?: { ... };      // borderRadius, padding, backgroundColor
+}
+```
+
+**LayoutDefinition** — la definición completa de una distribución:
+```typescript
+export interface LayoutDefinition {
+  readonly id: string;           // "video-left-story-right"
+  readonly name: string;         // "Video Izquierda / Historia Derecha"
+  readonly description: string;
+  readonly icon: string;         // "🎬"
+  readonly direction: "row" | "column";
+  readonly areas: LayoutAreaConfig[];
+}
+```
+
+**Announcement** (actualizado) — ahora incluye layout y contenido:
 ```typescript
 export interface Announcement {
   readonly id: string;
   readonly title: string;
-  readonly description?: string;   // ← opcional
+  readonly description?: string;
   readonly date: string;
-  readonly backgroundColor?: string; // ← opcional
+  readonly backgroundColor?: string;
+  readonly layoutId: string;     // qué layout usar
+  readonly content: {           // contenido para cada área
+    readonly [areaId: string]: readonly MediaContent[];
+  };
 }
 ```
 
 ```text
-interface vs type:
-  interface → extensible, mejor performance, preferida para objetos
-  type     → no extensible, necesaria para uniones e intersecciones
+EL CONTRATO CENTRAL: layoutId + content
 
-readonly:
-  "esta propiedad no se reasigna después de creada"
-  No es inmutabilidad profunda, es inmutabilidad de referencia.
-  Similar a const pero a nivel de propiedad.
+  layoutId define la ESTRUCTURA (dónde va cada cosa).
+  content[areaId] define los DATOS (qué va en cada lugar).
 
-?: (opcional):
-  La propiedad puede estar presente o ser undefined.
-  BillboardSlide usa: {description && <Text>...</Text>}
-  para renderizado condicional.
+  La conexión entre ambos es el ID del área:
+    LayoutDefinition.areas[0].id = "video"
+    Announcement.content.video   = [video, ...]
+
+  Si el layout define un área "story-top" pero el content
+  no tiene esa clave → se muestra "Sin contenido".
+  Si el content tiene "story-extra" pero el layout no → se ignora.
+
+  Esto es FLEXIBLE (no hay crash) pero QUIET (el error es silencioso).
 ```
 
 ### 7.2 `as const satisfies`
@@ -774,48 +855,98 @@ import { useAnnouncements } from "../hooks/useAnnouncements";
 const ANNOUNCEMENTS = useAnnouncements();
 ```
 
-### 10.3 Cambiar velocidad de rotación
+### 10.3 Agregar un nuevo layout
 
-Editar la constante en `Billboard.tsx`:
+Ver documentación completa en `docs/DISTRIBUCIONES.md` (Sección 6).
+Resumen: agregar un objeto al array `LAYOUTS` en `layouts.ts` y
+el contenido correspondiente en `announcements.ts`. No necesitas
+tocar ningún componente.
+
+### 10.4 Cambiar velocidad de rotación
+
+Editar la constante en `src/utils/tv.ts`:
 
 ```typescript
-const AUTO_ROTATION_INTERVAL_MS = 3000; // 3 segundos
+export const AUTO_ROTATION_INTERVAL_MS = 3000; // 3 segundos
 ```
 
-### 10.4 Agregar animaciones
+### 10.5 Cambiar velocidad de las stories
 
-Instalar `react-native-reanimated` (ya incluido) y reemplazar:
+Editar la constante en `src/components/media/StoryPanel.tsx`:
 
 ```typescript
-// En lugar de scrollTo() con animación nativa:
-useEffect(() => {
-  scrollX.value = withTiming(currentSlideIndex * screenWidth, {
-    duration: 500,
-    easing: Easing.inOut(Easing.ease),
-  });
-}, [currentSlideIndex]);
+const STORY_DURATION_MS = 3000; // 3 segundos por imagen
 ```
+
+### 10.6 Agregar animaciones entre imágenes de story
+
+Actualmente las stories usan cambio directo (cut). Para fade:
+
+En `StoryPanel.tsx`, reemplazar `<Image>` con `<Animated.Image>`
+usando `react-native-reanimated` (ya incluido) y `withTiming`.
+
+### 10.7 Forzar un layout desde el código
+
+En `Billboard.tsx`, `forcedLayoutId` permite sobrescribir el layout
+del anuncio actual. Se puede llamar programáticamente:
+
+```typescript
+setForcedLayoutId("video-full"); // fuerza layout fullscreen
+```
+
+El forzado expira después de 15s (3 ciclos de rotación) y vuelve
+al layout original del anuncio.
 
 ---
 
 ## 11. Resumen de Conceptos de CS Aplicados
 
 | Concepto | ¿Dónde se aplica? | ¿Por qué importa? |
-|---|---|---|
-| **Función pura** | `BillboardSlide`, `SlideIndicator` | Misma entrada = misma salida. Predecible, testeable. |
+|---|---|---|---|
+| **Función pura** | `BillboardSlide`, `SlideIndicator`, `LayoutEngine` | Misma entrada = misma salida. Predecible, testeable. |
 | **Estado vs. derivado** | `currentAnnouncement` se calcula de `currentSlideIndex` | Menos estado = menos bugs de inconsistencias. |
 | **Closures (cierres)** | `setInterval` callback captura variables | Si no usas forma funcional de setState, tienes stale closures. |
 | **Cortocircuito** | `{isPaused && <Overlay />}` | Renderizado condicional sin if/else. |
 | **Cuantización** | `Math.round(contentOffset / screenWidth)` | Señal continua → valor discreto. |
-| **Composición > Herencia** | `Billboard` = `SlideIndicator` + `BillboardSlide` | Más flexible que extender clases. |
+| **Composición > Herencia** | `Billboard` = `SlideIndicator` + `BillboardSlide` + `LayoutEngine` | Más flexible que extender clases. |
 | **Inmutabilidad** | `readonly` en interfaces, `as const` en datos | Menos efectos secundarios sorpresa. |
 | **Módulos (ESM)** | `export`/`import` por archivo | Encapsulamiento a nivel de archivo. |
 | **Event Loop** | `useEffect` se ejecuta DESPUÉS del paint | No bloquea la UI. |
 | **Memory management** | `clearInterval` en cleanup | Sin cleanup = memory leak. |
+| **Árbol (Tree)** | Layouts con stack (anidamiento) | Los layouts son árboles de áreas, no listas planas |
+| **Recursión** | LayoutEngine se llama a sí mismo para stacks | Renderiza profundidad arbitraria de anidamiento |
+| **Configuración declarativa** | Layouts definidos como datos en layouts.ts | Agregar layout = agregar datos, no código |
+| **Registro (Registry)** | LAYOUTS array central | Todos los layouts en un solo lugar, buscables por ID |
+| **Ciclo de vida (Lifecycle)** | isActive controla play/pause de cada área | Solo el slide visible consume recursos |
 
 ---
 
-## 12. Glosario
+## 12. Lecturas Recomendadas
+
+Este documento cubre la arquitectura GENERAL del proyecto.
+Para el sistema de distribuciones (layouts) en detalle absoluto,
+incluyendo mapa mental, las 10 variaciones con diagramas, decisiones
+de diseño, matriz de compatibilidad, y guía de extensión:
+
+→ **`docs/DISTRIBUCIONES.md`** — Documentación completa del sistema de layouts
+
+```text
+DISTRIBUCIONES.md contiene:
+  - Mapa mental del sistema de layouts
+  - Las 10 variaciones de distribución (con diagramas ASCII)
+  - Decisiones de diseño explicadas (por qué 60/40 y no 50/50)
+  - Ciclo de vida del contenido (timelines, isActive)
+  - Cómo funciona el motor de renderizado (algoritmo recursivo)
+  - Cómo agregar un nuevo layout (3 pasos)
+  - Consideraciones TV (códecs, framerate, resolución)
+  - Mapa de archivos completo
+  - Matriz de compatibilidad contenido vs layout
+  - Árbol de decisión visual para elegir layout
+```
+
+---
+
+## 13. Glosario
 
 | Término | Definición |
 |---|---|
@@ -827,3 +958,12 @@ useEffect(() => {
 | **Expo Router** | Librería de enrutamiento para React Native con file-based routing (como Next.js) |
 | **Container-Presentational** | Patrón de diseño donde los componentes inteligentes manejan estado/lógica y los tontos solo renderizan props |
 | **Stale Closure** | Bug donde una closure captura un valor antiguo de una variable porque la dependencia no se incluyó en el array de deps |
+| **Layout** | Mapa de distribución que define cómo se organiza el contenido en la pantalla (dirección, proporciones, tipos de área) |
+| **Layout Registry** | Array central de todas las definiciones de layout en `layouts.ts` |
+| **LayoutEngine** | Componente que interpreta una definición de layout y renderiza las áreas con sus componentes de contenido |
+| **Stack (layout)** | Área contenedora que agrupa sub-áreas con su propia dirección (row/column), permitiendo anidamiento |
+| **Flex (proporción)** | Valor relativo que determina qué fracción del espacio ocupa un área respecto a sus hermanas |
+| **Story** | Secuencia de imágenes que se muestran una a la vez con avance automático, similar a Instagram Stories |
+| **Image Grid** | Cuadrícula 2×2 de imágenes con paginación automática, para mostrar múltiples imágenes simultáneamente |
+| **isActive** | Prop que indica si un slide es el actualmente visible; controla la reproducción de video y timers de story/grid |
+| **forcedLayoutId** | Mecanismo para sobrescribir temporalmente el layout de un anuncio (útil para debug y previsualización) |
