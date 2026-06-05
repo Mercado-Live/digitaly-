@@ -26,6 +26,7 @@ export interface LayoutDefinition {
   readonly description: string;
   readonly icon: string;
   readonly direction: "row" | "column";
+  readonly gap?: number;
   readonly areas: readonly LayoutAreaConfig[];
 }
 

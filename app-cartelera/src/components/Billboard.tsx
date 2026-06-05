@@ -1,89 +1,81 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
-  ScrollView,
   StyleSheet,
-  Dimensions,
-  type NativeSyntheticEvent,
-  type NativeScrollEvent,
   Text,
   Pressable,
   TVFocusGuideView,
   TVEventHandler,
-  Platform,
+  ActivityIndicator,
 } from "react-native";
 
 import BillboardSlide from "./BillboardSlide";
-import SlideIndicator from "./SlideIndicator";
-import { ANNOUNCEMENTS } from "../data/announcements";
 import {
   IS_TV,
   tvScale,
   INACTIVITY_TIMEOUT_MS,
-  AUTO_ROTATION_INTERVAL_MS,
-  TV_EVENT_LEFT,
-  TV_EVENT_RIGHT,
   TV_EVENT_PLAY_PAUSE,
   TV_EVENT_SELECT,
 } from "../utils/tv";
-import {
-  getNextLayoutId,
-  getPreviousLayoutId,
-  getLayoutName,
-  getLayoutIcon,
-} from "./layouts/layouts";
+import { LAYOUTS, getLayoutName, getLayoutIcon } from "./layouts/layouts";
+import type { Announcement } from "../types";
+import { ConnectionBanner } from "./ConnectionBanner";
 
-interface BillboardProps {}
+const ACTIVE_LAYOUT_IDS = LAYOUTS.map((l) => l.id);
 
-export default function Billboard(_props: BillboardProps) {
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+interface BillboardProps {
+  readonly announcement: Announcement | null;
+  readonly isLoading: boolean;
+  readonly error: string | null;
+  readonly isFromCache: boolean;
+  readonly onRefresh: () => void;
+  readonly slideCount?: number;
+  readonly slideIndex?: number;
+  readonly onUnpair?: () => void;
+}
+
+export default function Billboard({
+  announcement: remoteAnnouncement,
+  isLoading,
+  error,
+  isFromCache,
+  onRefresh,
+  slideCount,
+  slideIndex,
+  onUnpair,
+}: BillboardProps) {
+  const [layoutIndex, setLayoutIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isTVFocused, setIsTVFocused] = useState(false);
-  const [forcedLayoutId, setForcedLayoutId] = useState<string | null>(null);
+  const [showLayoutOverlay, setShowLayoutOverlay] = useState(false);
 
-  const scrollViewRef = useRef<ScrollView>(null);
   const tvEventHandlerRef = useRef<TVEventHandler | null>(null);
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastInteractionRef = useRef<number>(0);
+  const overlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { width: screenWidth } = Dimensions.get("window");
-
-  const activeAnnouncement = ANNOUNCEMENTS[currentSlideIndex];
-
-  const currentLayoutId =
-    forcedLayoutId ?? activeAnnouncement.layoutId;
+  const currentLayoutId = ACTIVE_LAYOUT_IDS[layoutIndex];
   const currentLayoutName = getLayoutName(currentLayoutId);
   const currentLayoutIcon = getLayoutIcon(currentLayoutId);
 
-  /* ── EFECTO 1: TIMER DE ROTACIÓN AUTOMÁTICA ────────────────────────────── */
-  useEffect(() => {
-    if (isPaused) return;
-    const intervalId = setInterval(() => {
-      setCurrentSlideIndex(
-        (prevIndex) => (prevIndex + 1) % ANNOUNCEMENTS.length
-      );
-    }, AUTO_ROTATION_INTERVAL_MS);
-    return () => clearInterval(intervalId);
-  }, [isPaused]);
+  const announcement = remoteAnnouncement
+    ? { ...remoteAnnouncement, layoutId: currentLayoutId }
+    : null;
 
-  /* ── EFECTO 2: SINCRONIZACIÓN DEL SCROLL ────────────────────────────────── */
-  useEffect(() => {
-    scrollViewRef.current?.scrollTo({
-      x: currentSlideIndex * screenWidth,
-      y: 0,
-      animated: true,
-    });
-  }, [currentSlideIndex, screenWidth]);
+  const toggleLayout = useCallback(() => {
+    setLayoutIndex((prev) => (prev + 1) % ACTIVE_LAYOUT_IDS.length);
+    setIsPaused(true);
+    setIsTVFocused(true);
+    setShowLayoutOverlay(true);
 
-  useEffect(() => {
-    if (!forcedLayoutId) return;
-    const timer = setTimeout(() => {
-      setForcedLayoutId(null);
-    }, AUTO_ROTATION_INTERVAL_MS * 3);
-    return () => clearTimeout(timer);
-  }, [forcedLayoutId]);
+    if (overlayTimerRef.current !== null) {
+      clearTimeout(overlayTimerRef.current);
+    }
+    overlayTimerRef.current = setTimeout(() => {
+      setShowLayoutOverlay(false);
+    }, 2000);
+  }, []);
 
-  /* ── INACTIVIDAD TV ────────────────────────────────────────────────────── */
   const resetInactivityTimer = useCallback(() => {
     lastInteractionRef.current = Date.now();
 
@@ -96,11 +88,11 @@ export default function Billboard(_props: BillboardProps) {
       if (elapsed >= INACTIVITY_TIMEOUT_MS) {
         setIsPaused(false);
         setIsTVFocused(false);
+        setShowLayoutOverlay(false);
       }
     }, INACTIVITY_TIMEOUT_MS);
   }, []);
 
-  /* ── EFECTO 3: TV EVENT HANDLER ────────────────────────────────────────── */
   useEffect(() => {
     if (!IS_TV) return;
 
@@ -110,25 +102,10 @@ export default function Billboard(_props: BillboardProps) {
     handler.enable(null, (_component, event) => {
       const { eventType } = event;
 
-      if (eventType === TV_EVENT_LEFT) {
-        setCurrentSlideIndex(
-          (prev) => (prev - 1 + ANNOUNCEMENTS.length) % ANNOUNCEMENTS.length
-        );
-        setIsPaused(true);
-        setIsTVFocused(true);
-        resetInactivityTimer();
-      } else if (eventType === TV_EVENT_RIGHT) {
-        setCurrentSlideIndex(
-          (prev) => (prev + 1) % ANNOUNCEMENTS.length
-        );
-        setIsPaused(true);
-        setIsTVFocused(true);
+      if (eventType === TV_EVENT_SELECT) {
+        toggleLayout();
         resetInactivityTimer();
       } else if (eventType === TV_EVENT_PLAY_PAUSE) {
-        setIsPaused((prev) => !prev);
-        setIsTVFocused(true);
-        resetInactivityTimer();
-      } else if (eventType === TV_EVENT_SELECT) {
         setIsPaused((prev) => !prev);
         setIsTVFocused(true);
         resetInactivityTimer();
@@ -143,51 +120,56 @@ export default function Billboard(_props: BillboardProps) {
         inactivityTimerRef.current = null;
       }
     };
-  }, [resetInactivityTimer]);
-
-  /* ── MANEJADOR: SCROLL TÁCTIL ──────────────────────────────────────────── */
-  const handleMomentumScrollEnd = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const newIndex = Math.round(
-        event.nativeEvent.contentOffset.x / screenWidth
-      );
-      if (newIndex !== currentSlideIndex) {
-        setCurrentSlideIndex(newIndex);
-      }
-    },
-    [screenWidth, currentSlideIndex]
-  );
-
-  /* ── MANEJADOR: TOGGLE PAUSA ───────────────────────────────────────────── */
-  const handleTogglePause = useCallback(() => {
-    setIsPaused((prev) => !prev);
-    if (!isPaused) {
-      setForcedLayoutId(null);
-    }
-  }, [isPaused]);
-
-  const cycleLayoutForward = useCallback(() => {
-    setForcedLayoutId((prev) => {
-      const baseId = prev ?? activeAnnouncement.layoutId;
-      return getNextLayoutId(baseId);
-    });
-  }, [activeAnnouncement]);
-
-  const cycleLayoutBackward = useCallback(() => {
-    setForcedLayoutId((prev) => {
-      const baseId = prev ?? activeAnnouncement.layoutId;
-      return getPreviousLayoutId(baseId);
-    });
-  }, [activeAnnouncement]);
-
-  const currentAnnouncement = ANNOUNCEMENTS[currentSlideIndex];
+  }, [toggleLayout, resetInactivityTimer]);
 
   const ContainerComponent = IS_TV ? TVFocusGuideView : View;
+
+  if (isLoading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text style={styles.statusText}>Cargando contenido...</Text>
+      </View>
+    );
+  }
+
+  if (error && !announcement) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorIcon}>⚠</Text>
+        <Text style={styles.errorText}>{error}</Text>
+        <Pressable style={styles.retryButton} onPress={onRefresh}>
+          <Text style={styles.retryButtonText}>Reintentar</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (!announcement) {
+    return (
+      <View style={styles.center}>
+        <ConnectionBanner />
+        <Text style={styles.emptyIcon}>📺</Text>
+        <Text style={styles.emptyTitle}>Sin contenido asignado</Text>
+        <Text style={styles.emptySubtitle}>
+          Asigna una imagen, video o playlist desde el Panel de Control
+        </Text>
+        <Pressable style={styles.retryButton} onPress={onRefresh}>
+          <Text style={styles.retryButtonText}>Verificar ahora</Text>
+        </Pressable>
+        {onUnpair && (
+          <Pressable style={styles.unpairButton} onPress={onUnpair}>
+            <Text style={styles.unpairButtonText}>Desvincular dispositivo</Text>
+          </Pressable>
+        )}
+      </View>
+    );
+  }
 
   return (
     <Pressable
       style={styles.container}
-      onPress={handleTogglePause}
+      onPress={toggleLayout}
       {...(IS_TV
         ? {
             isTVSelectable: true,
@@ -202,96 +184,52 @@ export default function Billboard(_props: BillboardProps) {
         : {})}
     >
       <ContainerComponent style={styles.container}>
-        <ScrollView
-          ref={scrollViewRef}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={handleMomentumScrollEnd}
-          style={styles.scrollView}
-        >
-          <View
-            style={[
-              styles.slidesContainer,
-              { width: screenWidth * ANNOUNCEMENTS.length },
-            ]}
-          >
-            {ANNOUNCEMENTS.map((announcement, index) => {
-              const isFocused = IS_TV && isTVFocused && index === currentSlideIndex;
-              const isActiveSlide = index === currentSlideIndex;
-              return (
-                <View key={announcement.id} style={{ width: screenWidth }}>
-                  <BillboardSlide
-                    announcement={announcement}
-                    isTVFocused={isFocused}
-                    isActive={isActiveSlide}
-                  />
-                </View>
-              );
-            })}
+        <ConnectionBanner />
+
+        {isFromCache && (
+          <View style={styles.cacheBanner}>
+            <Text style={styles.cacheBannerText}>Modo offline — Contenido guardado</Text>
           </View>
-        </ScrollView>
+        )}
 
-        {isPaused && (
+        {slideCount && slideCount > 1 && (
+          <View style={styles.slideIndicator}>
+            {Array.from({ length: slideCount }).map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.slideDot,
+                  i === slideIndex && styles.slideDotActive,
+                ]}
+              />
+            ))}
+          </View>
+        )}
+
+        <BillboardSlide
+          announcement={announcement}
+          isTVFocused={isTVFocused}
+          isActive={true}
+        />
+
+        {(showLayoutOverlay || isPaused) && (
           <View style={styles.pauseOverlay} pointerEvents="box-none">
-            <Text
-              style={[
-                styles.pauseText,
-                IS_TV && { fontSize: tvScale(36) },
-              ]}
-            >
-              ⏸ PAUSADO
-            </Text>
-
             <View style={styles.layoutInfo}>
-              <Text
-                style={[
-                  styles.layoutLabel,
-                  IS_TV && { fontSize: tvScale(16) },
-                ]}
-              >
-                Layout actual:
+              <Text style={[styles.layoutLabel, IS_TV && { fontSize: tvScale(16) }]}>
+                Layout actual
               </Text>
-              <Text
-                style={[
-                  styles.layoutName,
-                  IS_TV && { fontSize: tvScale(20) },
-                ]}
-              >
+              <Text style={[styles.layoutName, IS_TV && { fontSize: tvScale(24) }]}>
                 {currentLayoutIcon} {currentLayoutName}
               </Text>
             </View>
 
-            {forcedLayoutId && (
-              <Text
-                style={[
-                  styles.forcedHint,
-                  IS_TV && { fontSize: tvScale(14) },
-                ]}
-              >
-                Layout forzado — vuelve al original en 15s
-              </Text>
-            )}
-
-            <Text
-              style={[
-                styles.pauseSubtext,
-                IS_TV && { fontSize: tvScale(16) },
-              ]}
-            >
+            <Text style={[styles.layoutHint, IS_TV && { fontSize: tvScale(14) }]}>
               {IS_TV
-                ? "Play/Pause para reanudar"
-                : "Toca para reanudar"}
+                ? "SELECT = cambiar layout  |  Play/Pause"
+                : "Toca para cambiar layout"}
             </Text>
           </View>
         )}
-
-        <View style={styles.indicatorContainer} pointerEvents="none">
-          <SlideIndicator
-            totalSlides={ANNOUNCEMENTS.length}
-            activeIndex={currentSlideIndex}
-          />
-        </View>
       </ContainerComponent>
     </Pressable>
   );
@@ -302,12 +240,72 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000000",
   },
-  scrollView: {
+  center: {
     flex: 1,
+    backgroundColor: "#0f0f23",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
   },
-  slidesContainer: {
-    flexDirection: "row",
-    flex: 1,
+  statusText: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 16,
+    marginTop: 16,
+  },
+  errorIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: "#ef4444",
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  emptyIcon: {
+    fontSize: 56,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: "#ffffff",
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.5)",
+    textAlign: "center",
+    marginBottom: 24,
+    maxWidth: 300,
+    lineHeight: 20,
+  },
+  retryButton: {
+    backgroundColor: "#3b82f6",
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    color: "#ffffff",
+    fontSize: IS_TV ? tvScale(18) : 16,
+    fontWeight: "600",
+  },
+  cacheBanner: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(245,158,11,0.9)",
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+    zIndex: 99,
+    alignItems: "center",
+  },
+  cacheBannerText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "600",
   },
   pauseOverlay: {
     position: "absolute",
@@ -317,47 +315,64 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-  },
-  pauseText: {
-    fontSize: 48,
-    fontWeight: "bold",
-    color: "#ffffff",
-    marginBottom: 16,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
   layoutInfo: {
     alignItems: "center",
-    marginBottom: 12,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    marginBottom: 16,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
   },
   layoutLabel: {
     fontSize: 14,
     color: "rgba(255,255,255,0.6)",
-    marginBottom: 4,
+    marginBottom: 6,
+    textTransform: "uppercase",
+    letterSpacing: 2,
   },
   layoutName: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "600",
     color: "#ffffff",
   },
-  forcedHint: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.5)",
-    marginBottom: 8,
-  },
-  pauseSubtext: {
-    fontSize: 18,
-    color: "rgba(255, 255, 255, 0.7)",
+  layoutHint: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
     marginTop: 8,
   },
-  indicatorContainer: {
-    position: "absolute",
-    bottom: 40,
+  slideIndicator: {
+    position: 'absolute',
+    bottom: 24,
     left: 0,
     right: 0,
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    zIndex: 10,
+  },
+  slideDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  slideDotActive: {
+    backgroundColor: '#3b82f6',
+    width: 20,
+  },
+  unpairButton: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.5)',
+  },
+  unpairButtonText: {
+    color: 'rgba(239,68,68,0.8)',
+    fontSize: IS_TV ? tvScale(14) : 13,
+    fontWeight: '500',
   },
 });

@@ -1,0 +1,210 @@
+/* ================================================================
+   CARTELERA DIGITAL - dashboard.css
+   Dashboard principal con metricas y actividad
+   ================================================================ */
+
+/* Stats grid */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+@media (max-width: 1024px) {
+    .dashboard-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 480px) {
+    .dashboard-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Welcome card (first-time users) */
+.welcome-card {
+    background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-800));
+    color: white;
+    border-radius: var(--radius-xl);
+    padding: var(--space-8);
+    margin-bottom: var(--space-6);
+}
+
+.welcome-card__title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--space-2);
+}
+
+.welcome-card__text {
+    font-size: var(--font-size-base);
+    opacity: 0.9;
+    margin-bottom: var(--space-6);
+}
+
+.welcome-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+}
+
+@media (max-width: 768px) {
+    .welcome-steps {
+        grid-template-columns: 1fr;
+    }
+}
+
+.welcome-step {
+    background: rgba(255,255,255,0.15);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    backdrop-filter: blur(8px);
+}
+
+.welcome-step__number {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    opacity: 0.4;
+    margin-bottom: var(--space-2);
+}
+
+.welcome-step__title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--space-1);
+}
+
+.welcome-step__desc {
+    font-size: var(--font-size-sm);
+    opacity: 0.8;
+    margin-bottom: var(--space-4);
+}
+
+.welcome-step .btn {
+    background: white;
+    color: var(--color-primary-700);
+}
+
+/* Activity feed */
+.activity-feed {
+    margin-bottom: var(--space-6);
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--color-border-primary);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-item__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.activity-item__dot--online  { background-color: var(--color-success); }
+.activity-item__dot--offline { background-color: var(--color-error); }
+.activity-item__dot--playing { background-color: var(--color-primary-500); }
+.activity-item__dot--upload  { background-color: var(--color-info); }
+.activity-item__dot--edit    { background-color: var(--color-warning); }
+
+.activity-item__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-item__time {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+}
+
+.activity-item__text {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}
+
+.activity-item__device {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-primary-600);
+}
+
+/* Device preview cards */
+.device-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-4);
+}
+
+.device-preview-card {
+    cursor: pointer;
+}
+
+.device-preview-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+.device-preview-card__name {
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-base);
+}
+
+.device-preview-card__content {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.device-preview-card__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--space-2);
+}
+
+/* Storage usage bar */
+.storage-usage {
+    padding: var(--space-4) 0;
+}
+
+.storage-usage__info {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-2);
+}
+
+.storage-usage__label {
+    color: var(--color-text-secondary);
+}
+
+.storage-usage__value {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+/* Quick actions */
+.quick-actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+@media (max-width: 480px) {
+    .quick-actions {
+        flex-direction: column;
+    }
+}

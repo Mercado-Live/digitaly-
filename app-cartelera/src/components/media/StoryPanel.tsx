@@ -93,12 +93,6 @@ export default function StoryPanel({
       />
 
       {progressIndicator}
-
-      <View style={styles.titleOverlay}>
-        <Text style={styles.titleText} numberOfLines={2}>
-          {currentMedia.title ?? ""}
-        </Text>
-      </View>
     </View>
   );
 }

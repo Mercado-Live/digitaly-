@@ -22,6 +22,7 @@ export default function LayoutEngine({
       style={{
         flex: 1,
         flexDirection: layout.direction,
+        gap: layout.gap,
       }}
     >
       {layout.areas.map((area) => (
@@ -116,6 +117,7 @@ function ContentRenderer({
       return (
         <VideoPlayer
           media={firstVideo}
+          mediaItems={videoContent.length > 1 ? videoContent : undefined}
           isActive={isActive}
           borderRadius={borderRadius}
         />

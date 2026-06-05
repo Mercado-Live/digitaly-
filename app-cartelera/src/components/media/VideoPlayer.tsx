@@ -1,38 +1,71 @@
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { View, StyleSheet, Text } from "react-native";
-import { ResizeMode, Video } from "expo-av";
+import { useVideoPlayer, VideoView } from "expo-video";
+import { Image } from "expo-image";
 
 import type { MediaContent } from "../../types";
 
 interface VideoPlayerProps {
   readonly media: MediaContent;
+  readonly mediaItems?: readonly MediaContent[];
   readonly isActive: boolean;
   readonly borderRadius?: number;
+  readonly muted?: boolean;
 }
 
 export default function VideoPlayer({
   media,
+  mediaItems,
   isActive,
   borderRadius = 0,
 }: VideoPlayerProps) {
-  const videoRef = useRef<Video>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const videos = mediaItems && mediaItems.length > 1 ? mediaItems : [media];
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showPoster, setShowPoster] = useState(!!videos[0]?.posterUrl);
+  const [isMuted, setIsMuted] = useState(true); // muteado por defecto
+  const prevUrl = useRef(videos[0]?.url);
+  const cycleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const currentMedia = videos[currentIndex] || { type: "video" as const, url: "" };
+
+  const player = useVideoPlayer(currentMedia.url || null, (player) => {
+    player.loop = true;
+    player.muted = true; // muteado por defecto
+    player.volume = 0;
+  });
+
+  // Cycle through videos
   useEffect(() => {
-    if (!videoRef.current) return;
+    if (videos.length <= 1) return;
+    if (!isActive) return;
 
-    if (isActive && isLoaded) {
-      videoRef.current.playAsync();
-    } else {
-      videoRef.current.pauseAsync();
+    const duration = (currentMedia.durationMs || 15000);
+    cycleTimer.current = setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % videos.length);
+    }, duration);
+
+    return () => {
+      if (cycleTimer.current) clearTimeout(cycleTimer.current);
+    };
+  }, [currentIndex, isActive, videos.length]);
+
+  // Update player when video changes
+  useEffect(() => {
+    if (currentMedia.url && currentMedia.url !== prevUrl.current) {
+      prevUrl.current = currentMedia.url;
+      setShowPoster(!!currentMedia.posterUrl);
+      player.replaceAsync(currentMedia.url);
     }
-  }, [isActive, isLoaded]);
+  }, [currentMedia.url, currentMedia.posterUrl]);
 
   useEffect(() => {
-    if (!videoRef.current) return;
-    videoRef.current.stopAsync();
-    setIsLoaded(false);
-  }, [media.url]);
+    if (isActive) {
+      player.play();
+    } else {
+      player.pause();
+      if (cycleTimer.current) clearTimeout(cycleTimer.current);
+    }
+  }, [isActive]);
 
   if (!media.url) {
     return (
@@ -54,20 +87,20 @@ export default function VideoPlayer({
         borderRadius > 0 && { borderRadius },
       ]}
     >
-      <Video
-        ref={videoRef}
-        source={{ uri: media.url }}
+      <VideoView
+        player={player}
         style={styles.video}
-        resizeMode={ResizeMode.CONTAIN}
-        shouldPlay={isActive}
-        isLooping
-        isMuted={false}
-        onLoad={() => setIsLoaded(true)}
-        posterSource={
-          media.posterUrl ? { uri: media.posterUrl } : undefined
-        }
-        usePoster={!!media.posterUrl}
+        contentFit="contain"
+        nativeControls={false}
+        onFirstFrameRender={() => setShowPoster(false)}
       />
+      {showPoster && media.posterUrl && (
+        <Image
+          source={{ uri: media.posterUrl }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+        />
+      )}
     </View>
   );
 }

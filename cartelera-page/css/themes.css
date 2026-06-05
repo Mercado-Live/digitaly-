@@ -1,0 +1,38 @@
+/* ================================================================
+   CARTELERA DIGITAL - themes.css
+   Tema oscuro adicional y transiciones entre temas
+   ================================================================ */
+
+/* Theme toggle button */
+.theme-toggle {
+    background: none;
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-full);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+}
+.theme-toggle:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+}
+
+/* Smooth transitions for theme switching */
+body, .sidebar, .main-content, .header,
+.card, .btn, .form-input, .form-select, .form-textarea,
+.modal, .modal-overlay, .toast, .nav-item,
+.badge, .dropdown__menu, .dropdown__item,
+.upload-zone, .day-btn, .filter-chip,
+.device-card, .playlist-item, .media-card,
+.empty-state, .tooltip {
+    transition: background-color var(--transition-base),
+                border-color var(--transition-base),
+                color var(--transition-base),
+                box-shadow var(--transition-base);
+}

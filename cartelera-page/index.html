@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartelera Digital - Panel de Control</title>
+    <meta name="description" content="Centro de control de carteleria digital. Gestiona tus pantallas y contenido multimedia.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%232563eb'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-family='sans-serif' font-weight='bold'>CD</text></svg>">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/grid.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/devices.css">
+    <link rel="stylesheet" href="css/media.css">
+    <link rel="stylesheet" href="css/playlists.css">
+    <link rel="stylesheet" href="css/layouts.css">
+    <link rel="stylesheet" href="css/schedules.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="css/themes.css">
+
+    <!-- Supabase SDK desde CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SortableJS para drag & drop en playlists -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1"></script>
+</head>
+<body>
+    <!-- Shell de la aplicacion -->
+    <div id="app-root">
+        <!-- Pantalla de carga inicial -->
+        <div id="app-loading" class="app-loading">
+            <div class="spinner spinner--lg"></div>
+            <p>Cargando Cartelera Digital...</p>
+        </div>
+    </div>
+
+    <!-- Contenedor de notificaciones toast -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Contenedor de modales globales -->
+    <div id="modal-container" class="modal-container"></div>
+
+    <!-- Entry point de la aplicacion -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+/* ================================================================
+   CARTELERA DIGITAL - schedules.css
+   Programaciones y calendario
+   ================================================================ */
+
+/* Schedule card */
+.schedule-card {
+    position: relative;
+}
+
+.schedule-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+.schedule-card__name {
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-base);
+}
+
+.schedule-card__status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.schedule-card__info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.schedule-card__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.schedule-card__playlist {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-primary-600);
+}
+
+.schedule-card__devices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+}
+
+.schedule-card__device-tag {
+    font-size: var(--font-size-xs);
+    padding: 1px 6px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-full);
+    color: var(--color-text-secondary);
+}
+
+/* Schedule editor */
+.schedule-editor {
+    max-width: 700px;
+}
+
+.schedule-editor__section {
+    margin-bottom: var(--space-6);
+}
+
+.schedule-editor__section-title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: var(--space-3);
+}
+
+/* Day selector */
+.day-selector {
+    display: flex;
+    gap: var(--space-1);
+}
+
+.day-btn {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-primary);
+    background: var(--color-bg-card);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.day-btn:hover {
+    border-color: var(--color-primary-300);
+    color: var(--color-primary-600);
+}
+
+.day-btn--selected {
+    background: var(--color-primary-600);
+    color: white;
+    border-color: var(--color-primary-600);
+}
+
+/* Time row */
+.time-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.time-row__label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    min-width: 50px;
+}
+
+.time-row input[type="time"] {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+}
+
+/* Date row */
+.date-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.date-row input[type="date"] {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+}
+
+/* Device selector */
+.device-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-2);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.device-selector__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: var(--font-size-sm);
+}
+
+.device-selector__item:hover {
+    border-color: var(--color-primary-300);
+}
+
+.device-selector__item--selected {
+    border-color: var(--color-primary-500);
+    background: var(--color-primary-50);
+}
+
+.device-selector__item input[type="checkbox"] {
+    accent-color: var(--color-primary-600);
+}
+
+/* Conflict warning */
+.conflict-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--color-warning-light);
+    border: 1px solid var(--color-warning);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-warning-dark);
+    margin-top: var(--space-3);
+}
+
+/* Time blocks */
+.time-block {
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-3);
+    position: relative;
+}
+
+.time-block__remove {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    background: none;
+    border: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 2px;
+}
+.time-block__remove:hover {
+    color: var(--color-error);
+}
+
+/* Schedule list */
+.schedule-list-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+}
+
+.schedule-list-item__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.schedule-list-item__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.schedule-list-item__name {
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-base);
+}
+
+.schedule-list-item__detail {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+}
+
+.schedule-list-item__meta {
+    text-align: right;
+}

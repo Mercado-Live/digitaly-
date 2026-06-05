@@ -29,14 +29,18 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#000000",
+          "resizeMode": "contain",
           "android": {
             "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76
+            "imageWidth": 200,
+            "resizeMode": "contain"
           }
         }
       ],
-      "@react-native-tvos/config-tv"
+      "@react-native-tvos/config-tv",
+      "expo-video",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

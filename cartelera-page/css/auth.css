@@ -1,0 +1,158 @@
+/* ================================================================
+   CARTELERA DIGITAL - auth.css
+   Paginas de Login y Registro
+   ================================================================ */
+
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-bg-secondary);
+    padding: var(--space-4);
+}
+
+.auth-card {
+    background-color: var(--color-bg-card);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    padding: var(--space-10);
+    width: 100%;
+    max-width: 440px;
+}
+
+.auth-card__logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-8);
+}
+
+.auth-card__logo-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--color-primary-600);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-xl);
+    color: white;
+    flex-shrink: 0;
+}
+
+.auth-card__logo-text {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+}
+
+.auth-card__title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    text-align: center;
+    margin-bottom: var(--space-2);
+}
+
+.auth-card__subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin-bottom: var(--space-8);
+}
+
+.auth-card__form {
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-card__submit {
+    margin-top: var(--space-4);
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--font-size-base);
+}
+
+.auth-card__separator {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin: var(--space-6) 0;
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
+}
+
+.auth-card__separator::before,
+.auth-card__separator::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: var(--color-border-primary);
+}
+
+.auth-card__footer {
+    text-align: center;
+    margin-top: var(--space-6);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.auth-card__error {
+    background-color: var(--color-error-light);
+    color: var(--color-error-dark);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.auth-card__success {
+    background-color: var(--color-success-light);
+    color: var(--color-success-dark);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-4);
+}
+
+/* Password visibility toggle */
+.form-password-wrapper {
+    position: relative;
+}
+
+.form-password-wrapper .form-input {
+    padding-right: 40px;
+}
+
+.form-password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-tertiary);
+    padding: 4px;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+.form-password-toggle:hover {
+    color: var(--color-text-secondary);
+}
+
+@media (max-width: 480px) {
+    .auth-card {
+        padding: var(--space-6);
+    }
+    .auth-card__title {
+        font-size: var(--font-size-xl);
+    }
+}

@@ -1,0 +1,78 @@
+/* ================================================================
+   CARTELERA DIGITAL - grid.css
+   Sistema de Grid de 12 columnas + CSS Grid utilities
+   ================================================================ */
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-left: calc(var(--space-4) * -1);
+    margin-right: calc(var(--space-4) * -1);
+}
+
+[class*="col-"] {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+    flex: 0 0 auto;
+    min-height: 1px;
+}
+
+.col-1  { width: 8.333%; }
+.col-2  { width: 16.667%; }
+.col-3  { width: 25%; }
+.col-4  { width: 33.333%; }
+.col-5  { width: 41.667%; }
+.col-6  { width: 50%; }
+.col-7  { width: 58.333%; }
+.col-8  { width: 66.667%; }
+.col-9  { width: 75%; }
+.col-10 { width: 83.333%; }
+.col-11 { width: 91.667%; }
+.col-12 { width: 100%; }
+
+/* CSS Grid utilities */
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-cols-5 { grid-template-columns: repeat(5, 1fr); }
+.grid-cols-6 { grid-template-columns: repeat(6, 1fr); }
+.grid-cols-auto-fill {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+.grid-cols-auto-fill-sm {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.gap-6 { gap: var(--space-6); }
+
+@media (max-width: 1024px) {
+    .col-md-1  { width: 8.333%; }
+    .col-md-2  { width: 16.667%; }
+    .col-md-3  { width: 25%; }
+    .col-md-4  { width: 33.333%; }
+    .col-md-6  { width: 50%; }
+    .col-md-12 { width: 100%; }
+
+    .grid-cols-2,
+    .grid-cols-3,
+    .grid-cols-4,
+    .grid-cols-5,
+    .grid-cols-6 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .col-sm-6  { width: 50%; }
+    .col-sm-12 { width: 100%; }
+}
+@media (max-width: 480px) {
+    .grid-cols-2,
+    .grid-cols-3,
+    .grid-cols-4,
+    .grid-cols-5,
+    .grid-cols-6,
+    .grid-cols-auto-fill,
+    .grid-cols-auto-fill-sm { grid-template-columns: 1fr; }
+}
