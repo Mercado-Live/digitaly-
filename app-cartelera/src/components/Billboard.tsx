@@ -94,9 +94,14 @@ export default function Billboard({
   }, []);
 
   useEffect(() => {
-    if (!IS_TV) return;
+    if (!IS_TV || typeof TVEventHandler === 'undefined') return;
 
-    const handler = new TVEventHandler();
+    let handler: TVEventHandler;
+    try {
+      handler = new TVEventHandler();
+    } catch {
+      return;
+    }
     tvEventHandlerRef.current = handler;
 
     handler.enable(null, (_component, event) => {
@@ -122,7 +127,7 @@ export default function Billboard({
     };
   }, [toggleLayout, resetInactivityTimer]);
 
-  const ContainerComponent = IS_TV ? TVFocusGuideView : View;
+  const ContainerComponent = IS_TV && typeof TVFocusGuideView !== 'undefined' ? TVFocusGuideView : View;
 
   if (isLoading) {
     return (

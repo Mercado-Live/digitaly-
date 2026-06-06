@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import { View, StyleSheet, Text } from "react-native";
-import { useVideoPlayer, VideoView } from "expo-video";
 import { Image } from "expo-image";
 
 import type { MediaContent } from "../../types";
@@ -13,6 +12,16 @@ interface VideoPlayerProps {
   readonly muted?: boolean;
 }
 
+let useVideoPlayer: any;
+let VideoView: any;
+try {
+  const expoVideo = require("expo-video");
+  useVideoPlayer = expoVideo.useVideoPlayer;
+  VideoView = expoVideo.VideoView;
+} catch {
+  // expo-video no disponible en esta plataforma
+}
+
 export default function VideoPlayer({
   media,
   mediaItems,
@@ -22,17 +31,16 @@ export default function VideoPlayer({
   const videos = mediaItems && mediaItems.length > 1 ? mediaItems : [media];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showPoster, setShowPoster] = useState(!!videos[0]?.posterUrl);
-  const [isMuted, setIsMuted] = useState(true); // muteado por defecto
   const prevUrl = useRef(videos[0]?.url);
   const cycleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentMedia = videos[currentIndex] || { type: "video" as const, url: "" };
 
-  const player = useVideoPlayer(currentMedia.url || null, (player) => {
+  const player = useVideoPlayer ? useVideoPlayer(currentMedia.url || null, (player: any) => {
     player.loop = true;
-    player.muted = true; // muteado por defecto
+    player.muted = true;
     player.volume = 0;
-  });
+  }) : null;
 
   // Cycle through videos
   useEffect(() => {
@@ -51,6 +59,7 @@ export default function VideoPlayer({
 
   // Update player when video changes
   useEffect(() => {
+    if (!player) return;
     if (currentMedia.url && currentMedia.url !== prevUrl.current) {
       prevUrl.current = currentMedia.url;
       setShowPoster(!!currentMedia.posterUrl);
@@ -59,6 +68,7 @@ export default function VideoPlayer({
   }, [currentMedia.url, currentMedia.posterUrl]);
 
   useEffect(() => {
+    if (!player) return;
     if (isActive) {
       player.play();
     } else {
@@ -76,6 +86,19 @@ export default function VideoPlayer({
         ]}
       >
         <Text style={styles.placeholderText}>Sin video</Text>
+      </View>
+    );
+  }
+
+  if (!useVideoPlayer) {
+    return (
+      <View
+        style={[
+          styles.placeholder,
+          borderRadius > 0 && { borderRadius },
+        ]}
+      >
+        <Text style={styles.placeholderText}>Video no disponible en esta plataforma</Text>
       </View>
     );
   }
