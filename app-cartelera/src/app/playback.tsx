@@ -9,6 +9,7 @@ import { useRealtime } from '../hooks/useRealtime';
 import { useHeartbeat } from '../hooks/useHeartbeat';
 import { useSchedule } from '../hooks/useSchedule';
 import Billboard from '../components/Billboard';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 export default function PlaybackRoute() {
   const [deviceId, setDeviceId] = useState<string | null>(null);
@@ -29,6 +30,8 @@ export default function PlaybackRoute() {
     refresh,
     slides,
     slideIndex,
+    nextSlide,
+    prevSlide,
     deviceDeleted,
     unpair,
   } = useContent(initReady ? deviceId : null);
@@ -107,17 +110,21 @@ export default function PlaybackRoute() {
   }
 
   return (
-    <Billboard
-      announcement={announcement}
-      isLoading={isLoading}
-      error={contentError}
-      isFromCache={isFromCache}
-      onRefresh={refresh}
-      slides={slides}
-      slideCount={slides.length}
-      slideIndex={slideIndex}
-      onUnpair={unpair}
-    />
+    <ErrorBoundary onRetry={refresh}>
+      <Billboard
+        announcement={announcement}
+        isLoading={isLoading}
+        error={contentError}
+        isFromCache={isFromCache}
+        onRefresh={refresh}
+        slides={slides}
+        slideCount={slides.length}
+        slideIndex={slideIndex}
+        onNextSlide={nextSlide}
+        onPrevSlide={prevSlide}
+        onUnpair={unpair}
+      />
+    </ErrorBoundary>
   );
 }
 

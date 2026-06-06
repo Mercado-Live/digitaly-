@@ -16,6 +16,11 @@ import {
   INACTIVITY_TIMEOUT_MS,
   TV_EVENT_PLAY_PAUSE,
   TV_EVENT_SELECT,
+  TV_EVENT_MENU,
+  TV_EVENT_LEFT,
+  TV_EVENT_RIGHT,
+  TV_EVENT_UP,
+  TV_EVENT_DOWN,
 } from "../utils/tv";
 import { LAYOUTS, getLayoutName, getLayoutIcon } from "./layouts/layouts";
 import type { Announcement } from "../types";
@@ -31,6 +36,8 @@ interface BillboardProps {
   readonly onRefresh: () => void;
   readonly slideCount?: number;
   readonly slideIndex?: number;
+  readonly onNextSlide?: () => void;
+  readonly onPrevSlide?: () => void;
   readonly onUnpair?: () => void;
 }
 
@@ -42,6 +49,8 @@ export default function Billboard({
   onRefresh,
   slideCount,
   slideIndex,
+  onNextSlide,
+  onPrevSlide,
   onUnpair,
 }: BillboardProps) {
   const [layoutIndex, setLayoutIndex] = useState(0);
@@ -61,6 +70,17 @@ export default function Billboard({
   const announcement = remoteAnnouncement
     ? { ...remoteAnnouncement, layoutId: currentLayoutId }
     : null;
+
+  // Sync layoutIndex with the incoming announcement's layoutId
+  // when a new slide/slideIndex arrives (auto-rotation or manual nav)
+  useEffect(() => {
+    if (remoteAnnouncement?.layoutId) {
+      const idx = ACTIVE_LAYOUT_IDS.indexOf(remoteAnnouncement.layoutId);
+      if (idx !== -1) {
+        setLayoutIndex(idx);
+      }
+    }
+  }, [remoteAnnouncement?.layoutId]);
 
   const toggleLayout = useCallback(() => {
     setLayoutIndex((prev) => (prev + 1) % ACTIVE_LAYOUT_IDS.length);
@@ -113,6 +133,16 @@ export default function Billboard({
       } else if (eventType === TV_EVENT_PLAY_PAUSE) {
         setIsPaused((prev) => !prev);
         setIsTVFocused(true);
+        resetInactivityTimer();
+      } else if (eventType === TV_EVENT_LEFT || eventType === TV_EVENT_UP) {
+        onPrevSlide?.();
+        resetInactivityTimer();
+      } else if (eventType === TV_EVENT_RIGHT || eventType === TV_EVENT_DOWN) {
+        onNextSlide?.();
+        resetInactivityTimer();
+      } else if (eventType === TV_EVENT_MENU) {
+        // Android TV BACK: consumir evento para evitar salir de la app
+        // En modo billboard, no queremos que el usuario cierre la app
         resetInactivityTimer();
       }
     });

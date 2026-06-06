@@ -136,5 +136,8 @@ export const AUTO_ROTATION_INTERVAL_MS = 5000;
  */
 export const TV_EVENT_LEFT = "left";
 export const TV_EVENT_RIGHT = "right";
+export const TV_EVENT_UP = "up";
+export const TV_EVENT_DOWN = "down";
 export const TV_EVENT_PLAY_PAUSE = "playPause";
 export const TV_EVENT_SELECT = "select";
+export const TV_EVENT_MENU = "menu";

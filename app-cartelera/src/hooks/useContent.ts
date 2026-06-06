@@ -5,7 +5,7 @@ import {
   getCachedAnnouncement,
 } from '../services/cache.service';
 import { clearStoredDeviceId } from '../services/device.service';
-import type { Announcement } from '../types';
+import type { Announcement, MediaContent } from '../types';
 
 interface UseContentResult {
   announcement: Announcement | null;
@@ -16,6 +16,8 @@ interface UseContentResult {
   isFromCache: boolean;
   deviceDeleted: boolean;
   refresh: () => Promise<void>;
+  nextSlide: () => void;
+  prevSlide: () => void;
   unpair: () => Promise<void>;
 }
 
@@ -82,6 +84,7 @@ export function useContent(deviceId: string | null): UseContentResult {
       if (!mountedRef.current) return;
 
       if (content && content.length > 0) {
+        console.log('[Content] Slides:', JSON.stringify(content.map(s => ({ id: s.id, layoutId: s.layoutId, zones: Object.keys(s.content), itemsPerZone: Object.fromEntries(Object.entries(s.content).map(([k, v]) => [k, v.map((m: MediaContent) => ({ type: m.type, source: m.source, url: m.url?.slice(0, 80) }))])) }))));
         setSlides(content);
         setSlideIndex(0);
         setAnnouncement(content[0]);
@@ -90,7 +93,6 @@ export function useContent(deviceId: string | null): UseContentResult {
         setDeviceDeleted(false);
         cacheAnnouncement(content[0]);
       } else {
-        // Verificar si el dispositivo fue eliminado
         const exists = await doesDeviceExist(deviceId);
         if (!mountedRef.current) return;
 
@@ -149,6 +151,16 @@ export function useContent(deviceId: string | null): UseContentResult {
     };
   }, [loadContent]);
 
+  const nextSlide = useCallback(() => {
+    if (slides.length <= 1) return;
+    setSlideIndex(prev => (prev + 1) % slides.length);
+  }, [slides.length]);
+
+  const prevSlide = useCallback(() => {
+    if (slides.length <= 1) return;
+    setSlideIndex(prev => (prev - 1 + slides.length) % slides.length);
+  }, [slides.length]);
+
   return {
     announcement,
     slides,
@@ -158,6 +170,8 @@ export function useContent(deviceId: string | null): UseContentResult {
     isFromCache,
     deviceDeleted,
     refresh: loadContent,
+    nextSlide,
+    prevSlide,
     unpair: async () => {
       await clearStoredDeviceId();
       setDeviceDeleted(true);
