@@ -6,3 +6,6 @@ js/env.js
 
 # Dependencias (si las hay)
 node_modules
+
+# APK (se sube a GitHub Releases, no directo al repo)
+apk/

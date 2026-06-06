@@ -16,6 +16,18 @@ export async function renderLoginPage(store, router) {
                 <div class="auth-card__logo-icon">CD</div>
                 <span class="auth-card__logo-text">Cartelera Digital</span>
             </div>
+
+            <div class="apk-download-banner">
+                <div class="apk-download-banner__icon">&#9660;</div>
+                <div class="apk-download-banner__text">
+                    <strong>App Android TV</strong>
+                    <span>Descarga la app para tu cartelera digital</span>
+                </div>
+                <a href="https://github.com/Mercado-Live/digitaly-/releases/download/v1.0.0/app-release.apk" class="btn btn--accent btn--lg apk-download-banner__btn" download>
+                    Descargar APK
+                </a>
+            </div>
+
             <h2 class="auth-card__title">Iniciar Sesion</h2>
             <p class="auth-card__subtitle">Ingresa tus credenciales para acceder al panel</p>
 

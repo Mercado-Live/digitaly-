@@ -610,3 +610,68 @@
     opacity: 1;
     visibility: visible;
 }
+
+/* === APK DOWNLOAD BANNER === */
+.apk-download-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    margin-bottom: var(--space-6);
+    background: linear-gradient(135deg, #059669 0%, #10b981 50%, #047857 100%);
+    border-radius: var(--radius-lg);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+.apk-download-banner__icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+.apk-download-banner__text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: var(--font-size-sm);
+    opacity: 0.95;
+}
+.apk-download-banner__text strong {
+    font-size: var(--font-size-base);
+    opacity: 1;
+}
+.apk-download-banner__btn {
+    flex-shrink: 0;
+    background: white;
+    color: #059669;
+    font-weight: var(--font-weight-bold);
+    border: none;
+    padding: var(--space-2) var(--space-5);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+.apk-download-banner__btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    text-decoration: none;
+    color: #059669;
+}
+@media (max-width: 480px) {
+    .apk-download-banner {
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+    }
+    .apk-download-banner__text {
+        width: 100%;
+    }
+    .apk-download-banner__btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
