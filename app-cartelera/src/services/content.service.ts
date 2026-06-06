@@ -70,7 +70,11 @@ async function fetchPlaylistWithMedia(
     .single();
 
   if (error || !playlist) {
-    console.error('Error fetching playlist:', error);
+    if (error && (error as { code?: string }).code === 'PGRST116') {
+      console.log('[Content] Playlist no encontrada (eliminada?):', playlistId);
+    } else {
+      console.error('Error fetching playlist:', error);
+    }
     return null;
   }
 
@@ -141,12 +145,27 @@ function convertSlideToAnnouncement(
 
     const mediaContents: MediaContent[] = [];
     for (const item of zoneItems) {
-      if (!item || !item.media_id) continue;
-      const media = mediaMap.get(item.media_id);
-      if (!media) continue;
-      mediaContents.push(mediaToContent(media));
-      if (media.type === 'video') hasVideo = true;
-      else hasImages = true;
+      if (!item) continue;
+
+      if (item.media_id) {
+        const media = mediaMap.get(item.media_id);
+        if (!media) continue;
+        mediaContents.push(mediaToContent(media));
+        if (media.type === 'video') hasVideo = true;
+        else hasImages = true;
+      } else if (item.media_url) {
+        const source = item.source || detectSource(item.media_url);
+        const isVideo = item.media_type === 'video' || source === 'youtube';
+        mediaContents.push({
+          type: isVideo ? 'video' : 'image-story',
+          url: item.media_url,
+          durationMs: (item.duration || 10) * 1000,
+          title: item.media_name,
+          source,
+        });
+        if (isVideo) hasVideo = true;
+        else hasImages = true;
+      }
     }
     if (mediaContents.length > 0) {
       content[zoneId] = mediaContents;
@@ -243,7 +262,13 @@ function mediaToContent(media: MediaRow): MediaContent {
     title: media.name,
     durationMs: (media.duration ?? 10) * 1000,
     posterUrl: media.thumbnail_url ?? undefined,
+    source: 'upload',
   };
+}
+
+function detectSource(url: string): 'url' | 'youtube' {
+  if (/youtube\.com|youtu\.be/i.test(url)) return 'youtube';
+  return 'url';
 }
 
 async function getActiveSchedule(deviceId: string): Promise<ScheduleRow | null> {

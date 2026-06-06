@@ -4,6 +4,7 @@ export interface MediaContent {
   readonly durationMs?: number;
   readonly posterUrl?: string;
   readonly title?: string;
+  readonly source?: 'upload' | 'url' | 'youtube';
 }
 
 export interface LayoutAreaConfig {

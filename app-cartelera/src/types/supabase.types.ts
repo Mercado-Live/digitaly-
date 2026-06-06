@@ -53,11 +53,12 @@ export interface PlaylistItem {
 }
 
 export interface SlideZoneItem {
-  media_id: string;
+  media_id?: string;
   media_url?: string;
   media_name?: string;
   media_type?: string;
   duration?: number;
+  source?: 'upload' | 'url' | 'youtube';
 }
 
 export interface SlideItem {
