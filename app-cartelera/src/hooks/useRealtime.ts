@@ -17,11 +17,13 @@ export function useRealtime({
 }: UseRealtimeOptions): void {
   const prevRef = useRef({ mediaId: lastKnownMediaId, playlistId: lastKnownPlaylistId });
   const onSyncRef = useRef(onSync);
+  const checkingRef = useRef(false);
   onSyncRef.current = onSync;
 
   const checkForChanges = useCallback(async () => {
-    if (!deviceId) return;
+    if (!deviceId || checkingRef.current) return;
 
+    checkingRef.current = true;
     try {
       const supabase = getSupabase();
       const { data } = await supabase
@@ -31,8 +33,6 @@ export function useRealtime({
         .single();
 
       if (!data) {
-        // Dispositivo no encontrado: pudo ser eliminado
-        // Trigger refresh para que useContent verifique y redirija a pairing
         onSyncRef.current();
         return;
       }
@@ -55,16 +55,30 @@ export function useRealtime({
       }
     } catch {
       // sin red
+    } finally {
+      checkingRef.current = false;
     }
   }, [deviceId]);
 
   useEffect(() => {
-    if (!deviceId) return;
+    if (!deviceId || !POLL_INTERVAL_MS) return;
 
     console.log('[Poll] Iniciando cada', POLL_INTERVAL_MS / 1000, 's para dispositivo', deviceId);
-    checkForChanges();
+    // No llamar checkForChanges inmediatamente — la carga inicial de useContent
+    // ya hizo fetchDeviceContent, y si llamamos aca con prevRef en null
+    // va a detectar un falso "cambio" y disparar refresh innecesario.
+    // Esperar el primer intervalo real.
 
     const id = setInterval(checkForChanges, POLL_INTERVAL_MS);
     return () => clearInterval(id);
   }, [deviceId, checkForChanges]);
+
+  useEffect(() => {
+    if (lastKnownPlaylistId && prevRef.current.playlistId === null) {
+      prevRef.current = {
+        mediaId: lastKnownMediaId,
+        playlistId: lastKnownPlaylistId,
+      };
+    }
+  }, [lastKnownPlaylistId, lastKnownMediaId]);
 }
