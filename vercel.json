@@ -1,6 +1,5 @@
 {
-    "rootDirectory": "cartelera-page",
-    "buildCommand": "node build.js",
-    "outputDirectory": ".",
+    "buildCommand": "cd cartelera-page && node build.js",
+    "outputDirectory": "cartelera-page",
     "framework": null
 }
