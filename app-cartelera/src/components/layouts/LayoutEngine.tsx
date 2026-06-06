@@ -123,7 +123,18 @@ function ContentRenderer({
         />
       );
     }
-    case "story":
+    case "story": {
+      const videoItems = content.filter((c) => c.type === "video");
+      if (videoItems.length > 0) {
+        return (
+          <VideoPlayer
+            media={videoItems[0]}
+            mediaItems={videoItems.length > 1 ? videoItems : undefined}
+            isActive={isActive}
+            borderRadius={borderRadius}
+          />
+        );
+      }
       return (
         <StoryPanel
           mediaItems={content}
@@ -132,7 +143,19 @@ function ContentRenderer({
           direction={direction ?? "column"}
         />
       );
-    case "image-grid":
+    }
+    case "image-grid": {
+      const gridVideoItems = content.filter((c) => c.type === "video");
+      if (gridVideoItems.length > 0) {
+        return (
+          <VideoPlayer
+            media={gridVideoItems[0]}
+            mediaItems={gridVideoItems.length > 1 ? gridVideoItems : undefined}
+            isActive={isActive}
+            borderRadius={borderRadius}
+          />
+        );
+      }
       return (
         <ImageGrid
           mediaItems={content}
@@ -140,6 +163,7 @@ function ContentRenderer({
           borderRadius={borderRadius}
         />
       );
+    }
     case "stack":
       return null;
     default:
