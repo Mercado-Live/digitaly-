@@ -1,50 +1,104 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="light">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cartelera Digital - Panel de Control</title>
+    <title>Cartelera Digital</title>
     <meta name="description" content="Centro de control de carteleria digital. Gestiona tus pantallas y contenido multimedia.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%232563eb'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-family='sans-serif' font-weight='bold'>CD</text></svg>">
-
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/grid.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/auth.css">
-    <link rel="stylesheet" href="css/dashboard.css">
-    <link rel="stylesheet" href="css/devices.css">
-    <link rel="stylesheet" href="css/media.css">
-    <link rel="stylesheet" href="css/playlists.css">
-    <link rel="stylesheet" href="css/layouts.css">
-    <link rel="stylesheet" href="css/schedules.css">
-    <link rel="stylesheet" href="css/notifications.css">
-    <link rel="stylesheet" href="css/themes.css">
-
-    <!-- Supabase SDK desde CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- SortableJS para drag & drop en playlists -->
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1"></script>
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#0f172a;line-height:1.6;min-height:100vh}
+        .layout{display:flex;min-height:100vh}
+        .brand{flex:0 0 45%;background:#0f172a;display:flex;flex-direction:column;justify-content:space-between;padding:48px;position:relative;overflow:hidden}
+        .brand::before{content:'';position:absolute;top:-120px;right:-120px;width:400px;height:400px;border:1px solid rgba(255,255,255,0.04);border-radius:50%}
+        .brand::after{content:'';position:absolute;bottom:-80px;left:-80px;width:300px;height:300px;border:1px solid rgba(255,255,255,0.03);border-radius:50%}
+        .brand__header{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+        .brand__icon{width:40px;height:40px;background:#2563eb;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:white}
+        .brand__name{font-size:1rem;font-weight:600;color:rgba(255,255,255,0.9)}
+        .brand__body{position:relative;z-index:1}
+        .brand__tag{display:inline-block;padding:4px 12px;background:rgba(37,99,235,0.15);color:#60a5fa;font-size:0.75rem;font-weight:600;border-radius:20px;margin-bottom:24px}
+        .brand__title{font-size:2.5rem;font-weight:700;color:white;line-height:1.15;letter-spacing:-0.03em;margin-bottom:16px}
+        .brand__desc{font-size:0.95rem;color:rgba(255,255,255,0.55);line-height:1.7;max-width:380px;margin-bottom:40px}
+        .brand__btn{display:inline-flex;align-items:center;gap:12px;padding:14px 28px;background:white;color:#0f172a;font-weight:600;font-size:0.95rem;border-radius:10px;text-decoration:none;transition:transform 0.15s,box-shadow 0.15s;box-shadow:0 4px 14px rgba(0,0,0,0.15)}
+        .brand__btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.25)}
+        .brand__btn-icon{width:28px;height:28px;background:#2563eb;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:white;font-size:0.85rem}
+        .brand__btn-sub{display:block;font-weight:400;font-size:0.7rem;color:rgba(15,23,42,0.5)}
+        .brand__footer{position:relative;z-index:1;display:flex;gap:24px;font-size:0.75rem;color:rgba(255,255,255,0.3)}
+        .panel{flex:1;display:flex;align-items:center;justify-content:center;padding:48px;background:#f8fafc}
+        .card{width:100%;max-width:400px}
+        .card h2{font-size:1.5rem;font-weight:700;color:#0f172a;margin-bottom:4px;letter-spacing:-0.02em}
+        .card p{font-size:0.875rem;color:#64748b;margin-bottom:32px}
+        .spinner{width:24px;height:24px;border:3px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin 0.6s linear infinite;margin:0 auto 16px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .loading-state{text-align:center;padding:40px 0;color:#64748b;font-size:0.875rem}
+        @media(max-width:900px){.layout{flex-direction:column}.brand{flex:none;padding:40px 32px}.brand__title{font-size:1.75rem}.brand__body{margin:32px 0}.brand__footer{display:none}.panel{padding:32px 24px}.card{max-width:100%}}
+        @media(max-width:480px){.brand{padding:28px 20px}.brand__title{font-size:1.5rem}.panel{padding:24px 20px}}
+    </style>
+    <link rel="stylesheet" href="css/main.css" media="none" onload="this.media='all'">
+    <link rel="stylesheet" href="css/components.css" media="none" onload="this.media='all'">
+    <link rel="stylesheet" href="css/auth.css" media="none" onload="this.media='all'">
+    <link rel="stylesheet" href="css/grid.css" media="none" onload="this.media='all'">
+    <link rel="stylesheet" href="css/dashboard.css" media="none" onload="this.media='all'">
+    <link rel="stylesheet" href="css/devices.css" media="none" onload="this.media='all'">
+    <link rel="stylesheet" href="css/media.css" media="none" onload="this.media='all'">
+    <link rel="stylesheet" href="css/playlists.css" media="none" onload="this.media='all'">
+    <link rel="stylesheet" href="css/layouts.css" media="none" onload="this.media='all'">
+    <link rel="stylesheet" href="css/schedules.css" media="none" onload="this.media='all'">
+    <link rel="stylesheet" href="css/notifications.css" media="none" onload="this.media='all'">
+    <link rel="stylesheet" href="css/themes.css" media="none" onload="this.media='all'">
 </head>
 <body>
-    <!-- Shell de la aplicacion -->
     <div id="app-root">
-        <!-- Pantalla de carga inicial -->
-        <div id="app-loading" class="app-loading">
-            <div class="spinner spinner--lg"></div>
-            <p>Cargando Cartelera Digital...</p>
+        <div class="layout">
+            <div class="brand">
+                <div class="brand__header">
+                    <div class="brand__icon">CD</div>
+                    <span class="brand__name">Cartelera Digital</span>
+                </div>
+                <div class="brand__body">
+                    <div class="brand__tag">App Android TV</div>
+                    <h1 class="brand__title">Gestiona tus pantallas desde cualquier lugar</h1>
+                    <p class="brand__desc">Controla tu cartelera digital, programa contenido en tiempo real y llega a tu audiencia desde una sola plataforma.</p>
+                    <a href="https://github.com/Mercado-Live/digitaly-/releases/download/v1.0.0/app-release.apk" class="brand__btn" download>
+                        <span class="brand__btn-icon">&#9660;</span>
+                        <span>Descargar APK<span class="brand__btn-sub">Android TV &bull; v1.0.0</span></span>
+                    </a>
+                </div>
+                <div class="brand__footer">
+                    <span>&copy; 2026 Cartelera Digital</span>
+                    <span>Hecho en Chile</span>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="card">
+                    <h2>Iniciar sesion</h2>
+                    <p>Cargando panel de control...</p>
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <span>Conectando con el servidor</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Contenedor de notificaciones toast -->
     <div id="toast-container" class="toast-container"></div>
-
-    <!-- Contenedor de modales globales -->
     <div id="modal-container" class="modal-container"></div>
 
-    <!-- Configuracion (generado por build.js en Vercel) -->
+    <script>
+    setTimeout(function(){
+        var loginText = document.querySelector('.card p');
+        var loadingState = document.querySelector('.loading-state');
+        if (loginText && loadingState) {
+            loginText.textContent = 'El panel no pudo cargarse automaticamente.';
+            loadingState.innerHTML = '<a href="#/login" style="display:inline-block;padding:10px 24px;background:#2563eb;color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:0.9rem">Ir al inicio de sesion</a>';
+        }
+    }, 8000);
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1"></script>
     <script src="js/env.js"></script>
-    <!-- Entry point de la aplicacion -->
     <script type="module" src="js/app.js"></script>
 </body>
 </html>
