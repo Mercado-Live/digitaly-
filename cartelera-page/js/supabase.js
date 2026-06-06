@@ -3,9 +3,11 @@
 // Cliente de Supabase: inicializacion, auth helpers
 // ================================================================
 
-// Configuracion - Reemplazar con valores reales de tu proyecto Supabase
-const SUPABASE_URL = 'https://wntecetvtwsmylsxexgt.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndudGVjZXR2dHdzbXlsc3hleGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NjkxMDgsImV4cCI6MjA5NjI0NTEwOH0.Rm27VzgfaZ_BZPTzFKkhKq7gLVOTt2_gayuZdJGxGa0';
+// Configuracion desde window.__ENV__ (inyectado por build.js en Vercel)
+// O valores hardcoded como fallback local
+const __ENV = (typeof window !== 'undefined' && window.__ENV__) || {};
+const SUPABASE_URL = __ENV.SUPABASE_URL || 'https://wntecetvtwsmylsxexgt.supabase.co';
+const SUPABASE_ANON_KEY = __ENV.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndudGVjZXR2dHdzbXlsc3hleGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NjkxMDgsImV4cCI6MjA5NjI0NTEwOH0.Rm27VzgfaZ_BZPTzFKkhKq7gLVOTt2_gayuZdJGxGa0';
 
 let supabaseClient = null;
 

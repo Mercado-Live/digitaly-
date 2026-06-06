@@ -1,0 +1,8 @@
+# Configuracion generada por build.js
+js/env.js
+
+# Carpeta de Vercel CLI
+.vercel
+
+# Dependencias (si las hay)
+node_modules

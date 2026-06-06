@@ -4,7 +4,7 @@
 // ================================================================
 
 import { renderAppShell } from './shell.js';
-import { getUserMedia, createMedia, remove, uploadFile, getPublicUrl } from '../api.js';
+import { getUserMedia, getUserStorageUsage, createMedia, remove, uploadFile, getPublicUrl } from '../api.js';
 import { t } from '../utils/i18n.js';
 import { formatBytes, formatDuration, showModal, closeModal, debounce } from '../utils/dom.js';
 import { showToast } from './notifications.js';
@@ -26,6 +26,15 @@ export async function renderMediaPage(store, router) {
             </div>
             <div class="page-actions">
                 <button class="btn btn--primary" id="btn-upload">+ Subir Archivos</button>
+            </div>
+        </div>
+        <div id="storage-info" class="card" style="margin-bottom:16px;padding:12px 16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:14px;font-weight:500">Almacenamiento utilizado</span>
+                <span style="font-size:14px;color:var(--color-text-secondary)" id="storage-text">Calculando...</span>
+            </div>
+            <div style="margin-top:8px;height:6px;background:var(--color-border);border-radius:3px;overflow:hidden">
+                <div id="storage-bar" style="height:100%;width:0%;background:var(--color-primary);border-radius:3px;transition:width 0.3s"></div>
             </div>
         </div>
         <div class="toolbar">
@@ -83,7 +92,29 @@ export async function renderMediaPage(store, router) {
         });
     });
 
-    if (userId) loadMedia(store, userId);
+    if (userId) {
+        loadMedia(store, userId);
+        loadStorageUsage(userId);
+    }
+}
+
+async function loadStorageUsage(userId) {
+    try {
+        const totalBytes = await getUserStorageUsage(userId);
+        const totalMB = totalBytes / (1024 * 1024);
+        const textEl = document.getElementById('storage-text');
+        const barEl = document.getElementById('storage-bar');
+        if (textEl) textEl.textContent = formatBytes(totalBytes);
+        if (barEl) {
+            const pct = Math.min(100, (totalMB / 500) * 100); // 500 MB max visual
+            barEl.style.width = pct + '%';
+            if (totalMB > 400) barEl.style.background = 'var(--color-warning)';
+            if (totalMB > 490) barEl.style.background = 'var(--color-error)';
+        }
+    } catch (e) {
+        const textEl = document.getElementById('storage-text');
+        if (textEl) textEl.textContent = 'No disponible';
+    }
 }
 
 async function loadMedia(store, userId) {
@@ -378,5 +409,6 @@ function showUploadModal(store, userId) {
         showToast(`${selectedFiles.length} archivo(s) subidos correctamente`, 'success');
         setTimeout(() => closeModal(overlay), 1000);
         loadMedia(store, userId);
+        loadStorageUsage(userId);
     });
 }

@@ -587,3 +587,263 @@
     color: var(--color-text-secondary);
     font-weight: var(--font-weight-semibold);
 }
+
+/* ================================================================
+   NUEVO EDITOR DE SLIDES - 3 paneles
+   ================================================================ */
+
+.slide-editor {
+    display: grid;
+    grid-template-columns: 1fr 280px 280px;
+    gap: var(--space-5);
+    min-height: 480px;
+    max-height: 70vh;
+}
+
+.slide-editor__canvas {
+    min-width: 0;
+}
+
+.slide-editor__hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    text-align: center;
+    margin-top: var(--space-2);
+    font-style: italic;
+}
+
+.slide-editor__empty-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-6) var(--space-4);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-tertiary);
+    height: 100%;
+    min-height: 120px;
+}
+
+.slide-editor__zone-panel {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--color-border-primary);
+    padding-left: var(--space-4);
+    overflow-y: auto;
+}
+
+.slide-editor__zone-panel-title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--space-1);
+    color: var(--color-text-primary);
+}
+
+.slide-editor__zone-panel-subtitle {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-2);
+}
+
+.slide-editor__zone-panel-stats {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-3);
+    padding: var(--space-2);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-sm);
+    line-height: 1.6;
+}
+
+.slide-editor__media-panel {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--color-border-primary);
+    padding-left: var(--space-4);
+    overflow-y: auto;
+    min-width: 0;
+}
+
+.slide-editor__media-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.slide-editor__media-item {
+    border: 2px solid var(--color-border-primary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+    background: var(--color-bg-secondary);
+}
+
+.slide-editor__media-item:hover {
+    border-color: var(--color-primary-400);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.slide-editor__media-item--assigned {
+    border-color: var(--color-primary-500);
+    background: var(--color-primary-50, rgba(59, 130, 246, 0.05));
+}
+
+.slide-editor__media-item--assigned::after {
+    content: '\2713';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-primary-600, #2563eb);
+    color: white;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.slide-editor__media-item-thumb {
+    aspect-ratio: 16 / 10;
+    background: var(--color-bg-tertiary);
+    overflow: hidden;
+}
+
+.slide-editor__media-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.slide-editor__media-item-thumb--video {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.slide-editor__media-item-name {
+    padding: 4px 6px;
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.slide-editor__zone-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-1);
+}
+
+.slide-editor__zone-item-drag {
+    color: var(--color-text-tertiary);
+    cursor: grab;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.slide-editor__zone-item-thumb {
+    width: 40px;
+    height: 30px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    flex-shrink: 0;
+    background: var(--color-bg-tertiary);
+}
+
+.slide-editor__zone-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.slide-editor__zone-item-name {
+    flex: 1;
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.slide-editor__zone-item-dur {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.slide-editor__zone-item-dur input {
+    width: 38px;
+    padding: 2px 4px;
+    font-size: 11px;
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-sm);
+    text-align: center;
+}
+
+.slide-editor__zone-item-del {
+    background: none;
+    border: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.slide-editor__zone-item-del:hover {
+    color: var(--color-error);
+}
+
+.slide-editor__no-media {
+    text-align: center;
+    padding: var(--space-6) var(--space-4);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-tertiary);
+}
+
+@media (max-width: 1100px) {
+    .slide-editor {
+        grid-template-columns: 1fr 260px;
+        max-height: none;
+    }
+    .slide-editor__media-panel {
+        grid-column: 1 / -1;
+        border-left: none;
+        border-top: 1px solid var(--color-border-primary);
+        padding-left: 0;
+        padding-top: var(--space-4);
+        max-height: 200px;
+    }
+}
+
+@media (max-width: 768px) {
+    .slide-editor {
+        grid-template-columns: 1fr;
+        max-height: none;
+    }
+    .slide-editor__zone-panel,
+    .slide-editor__media-panel {
+        border-left: none;
+        border-top: 1px solid var(--color-border-primary);
+        padding-left: 0;
+        padding-top: var(--space-4);
+        max-height: 250px;
+    }
+}

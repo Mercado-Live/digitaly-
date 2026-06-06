@@ -186,15 +186,6 @@ function renderDevicesPreview(devices, router) {
         </div>`;
     }).join('');
 
-    return `
-    <div class="card" style="margin-bottom:24px">
-        <div class="card__header">
-            <span class="card__title">Dispositivos</span>
-            <button class="btn btn--ghost btn--sm" data-nav="devices">Ver todos</button>
-        </div>
-        <div class="device-preview-grid">${cards}</div>
-    </div>`;
-
     // Bind de clicks en cards (hecho en el DOM cargado)
     setTimeout(() => {
         document.querySelectorAll('.device-preview-card').forEach(card => {
@@ -203,6 +194,15 @@ function renderDevicesPreview(devices, router) {
             });
         });
     }, 0);
+
+    return `
+    <div class="card" style="margin-bottom:24px">
+        <div class="card__header">
+            <span class="card__title">Dispositivos</span>
+            <button class="btn btn--ghost btn--sm" data-nav="devices">Ver todos</button>
+        </div>
+        <div class="device-preview-grid">${cards}</div>
+    </div>`;
 }
 
 function renderQuickActions(router) {

@@ -305,6 +305,14 @@ export async function renderDeviceDetailPage(store, router, deviceId) {
         const device = await fetchById('devices', deviceId);
         store.setState({ selectedDevice: device });
 
+        let playlistName = '';
+        if (device.current_playlist_id) {
+            try {
+                const playlist = await fetchById('playlists', device.current_playlist_id, 'name');
+                playlistName = playlist.name;
+            } catch (e) { /* playlist no encontrada */ }
+        }
+
         const statusClass = device.status === 'online' || device.status === 'playing' ? 'online' :
                            device.status === 'idle' ? 'idle' : 'offline';
         const statusText = device.status === 'online' ? 'En linea' :
@@ -338,6 +346,7 @@ export async function renderDeviceDetailPage(store, router, deviceId) {
                             <div class="info-item"><span class="info-item__label">IP</span><span class="info-item__value">${device.ip_address || '—'}</span></div>
                             <div class="info-item"><span class="info-item__label">Ultima vez</span><span class="info-item__value">${formatDateTime(device.last_seen)}</span></div>
                             <div class="info-item"><span class="info-item__label">Codigo vinculacion</span><span class="info-item__value" style="font-family:monospace">${device.device_key || '—'}</span></div>
+                            ${playlistName ? `<div class="info-item"><span class="info-item__label">Playlist asignada</span><span class="info-item__value" style="color:var(--color-primary)">${playlistName}</span></div>` : ''}
                         </div>
                     </div>
                     <div class="card" style="margin-bottom:24px">
@@ -432,7 +441,33 @@ async function loadDevicePreview(device) {
                 preview.innerHTML = media.type === 'video'
                     ? `<video src="${media.url}" autoplay muted loop style="width:100%;height:100%;object-fit:contain"></video>`
                     : `<img src="${media.url}" alt="${media.name}" style="width:100%;height:100%;object-fit:contain">`;
+                return;
             }
+        } catch (e) {
+            preview.innerHTML = '<div class="preview-panel__placeholder">Error al cargar preview</div>';
+            return;
+        }
+    }
+
+    if (device.current_playlist_id) {
+        try {
+            const playlist = await fetchById('playlists', device.current_playlist_id, 'id,name,items');
+            const items = playlist.items || [];
+            for (const slide of items) {
+                const zones = slide.zones || [];
+                for (const zone of zones) {
+                    if (zone.media_id) {
+                        const media = await fetchById('media', zone.media_id, 'id,type,url,name');
+                        if (media) {
+                            preview.innerHTML = media.type === 'video'
+                                ? `<video src="${media.url}" autoplay muted loop style="width:100%;height:100%;object-fit:contain"></video>`
+                                : `<img src="${media.url}" alt="${media.name}" style="width:100%;height:100%;object-fit:contain">`;
+                            return;
+                        }
+                    }
+                }
+            }
+            preview.innerHTML = '<div class="preview-panel__placeholder">Playlist sin contenido multimedia</div>';
         } catch (e) {
             preview.innerHTML = '<div class="preview-panel__placeholder">Error al cargar preview</div>';
         }

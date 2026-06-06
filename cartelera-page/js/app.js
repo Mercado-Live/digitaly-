@@ -86,7 +86,10 @@ async function bootstrap() {
                 isAuthLoading: false
             });
             try { initRealtime(store); } catch(e) { console.warn('Realtime init fallo:', e); }
-            router.replace('/dashboard');
+            const currentHash = window.location.hash.slice(1);
+            if (!currentHash || currentHash === '/login' || currentHash === '/register') {
+                router.replace('/dashboard');
+            }
         } else if (event === 'SIGNED_OUT') {
             cleanupChannels();
             store.reset(INITIAL_STATE);

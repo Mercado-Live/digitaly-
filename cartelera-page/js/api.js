@@ -140,6 +140,17 @@ function generateDeviceKey() {
 
 // --- Helpers de media ---
 
+export async function getUserStorageUsage(userId) {
+    const { data, error } = await supabase()
+        .from('media')
+        .select('file_size')
+        .eq('user_id', userId)
+        .eq('is_archived', false);
+    if (error) throw error;
+    const totalBytes = (data || []).reduce((sum, item) => sum + (item.file_size || 0), 0);
+    return totalBytes;
+}
+
 export async function getUserMedia(userId, options = {}) {
     return fetchAll('media', {
         filters: [

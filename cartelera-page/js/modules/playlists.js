@@ -378,7 +378,7 @@ function bindPlaylistEditorEvents(store, router, playlist, slides, userId) {
         try { previewIdx = (previewIdx - 1 + currentSlides.length) % (currentSlides.length || 1); showPreview(previewIdx); } catch(e) {}
     });
 
-    // --- Modal: Editor de layout del slide (MULTI-ITEM) ---
+    // --- Modal: Editor de layout del slide (rediseñado 3 paneles) ---
     async function openLayoutEditor(slideIdx) {
         try {
             if (!currentSlides[slideIdx]) { showToast('Slide no encontrado', 'error'); return; }
@@ -389,21 +389,73 @@ function bindPlaylistEditorEvents(store, router, playlist, slides, userId) {
             let mediaItems = [];
             try { const { data } = await getUserMedia(userId, { limit: 200 }); mediaItems = data || []; } catch (e) {}
 
-            const overlay = showModal(`<div class="modal modal--xl"><div class="modal__header"><span class="modal__title">Editar Slide #${slideIdx + 1} — Multi-contenido</span><button class="modal__close">&times;</button></div>
-        <div class="modal__body"><div class="layout-editor-modal">
-            <div class="layout-editor-modal__canvas"><div class="layout-canvas" id="layout-canvas-${slideIdx}"></div></div>
-            <div class="layout-editor-modal__panel">
-                <div class="form-group"><label class="form-label">Layout</label><select class="form-select" id="slide-layout-select">${LAYOUTS.map(l => `<option value="${l.id}" ${slide.layout_id===l.id?'selected':''}>${l.icon} ${l.name}</option>`).join('')}</select></div>
-                <div class="size-guide" id="size-guide-text">${getLayoutById(slide.layout_id)?.sizeGuide ? Object.entries(getLayoutById(slide.layout_id).sizeGuide).map(([z,g]) => '<strong>' + z + ':</strong> ' + g).join('<br>') : ''}</div>
-                <div id="zone-detail-panel" style="font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-top:12px">Selecciona una zona en el canvas</div>
-            </div>
-        </div></div>
-        <div class="modal__footer"><button class="btn btn--secondary close-modal">Cancelar</button><button class="btn btn--primary" id="btn-save-slide">Aplicar Cambios</button></div></div>`);
+            const overlay = showModal(`
+                <div class="modal modal--xl">
+                    <div class="modal__header">
+                        <span class="modal__title">Editar Slide #${slideIdx + 1}</span>
+                        <button class="modal__close">&times;</button>
+                    </div>
+                    <div class="modal__body">
+                        <div class="slide-editor">
+                            <div class="slide-editor__canvas">
+                                <div class="form-group" style="margin-bottom:12px">
+                                    <label class="form-label">Layout</label>
+                                    <select class="form-select" id="slide-layout-select">
+                                        ${LAYOUTS.map(l => `<option value="${l.id}" ${slide.layout_id===l.id?'selected':''}>${l.icon} ${l.name}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="layout-canvas" id="layout-canvas-${slideIdx}"></div>
+                                <p class="slide-editor__hint" id="canvas-hint">Haz clic en una zona para editar su contenido</p>
+                            </div>
+                            <div class="slide-editor__zone-panel" id="zone-detail-panel">
+                                <div class="slide-editor__empty-hint">Selecciona una zona del canvas para editar su contenido</div>
+                            </div>
+                            <div class="slide-editor__media-panel">
+                                <div style="margin-bottom:12px">
+                                    <details style="margin-bottom:8px;background:var(--color-surface);border-radius:8px;padding:8px;border:1px dashed var(--color-border)">
+                                        <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)">
+                                            Agregar desde URL
+                                        </summary>
+                                        <div class="form-group" style="margin-top:8px">
+                                            <label class="form-label" style="font-size:11px">URL del contenido</label>
+                                            <input class="form-input form-input--sm" type="url" id="url-source-input" placeholder="https://youtube.com/watch?v=... o https://ejemplo.com/imagen.jpg">
+                                        </div>
+                                        <div style="display:flex;gap:6px;margin-top:6px">
+                                            <div class="form-group" style="flex:1">
+                                                <label class="form-label" style="font-size:11px">Nombre</label>
+                                                <input class="form-input form-input--sm" type="text" id="url-name-input" placeholder="Nombre del contenido">
+                                            </div>
+                                            <div class="form-group" style="width:80px">
+                                                <label class="form-label" style="font-size:11px">Duracion (s)</label>
+                                                <input class="form-input form-input--sm" type="number" id="url-duration-input" value="10" min="3" max="300">
+                                            </div>
+                                        </div>
+                                        <button class="btn btn--primary btn--sm" id="btn-add-url" style="margin-top:6px;width:100%">Agregar URL</button>
+                                    </details>
+                                    <div class="search-input-wrapper">
+                                        <span class="search-input-wrapper__icon">&#x1F50D;</span>
+                                        <input class="form-input" type="text" id="media-editor-search" placeholder="Buscar archivos...">
+                                    </div>
+                                    <div class="filter-bar" style="margin-top:8px">
+                                        <button class="filter-chip filter-chip--active" data-editor-filter="all">Todos</button>
+                                        <button class="filter-chip" data-editor-filter="image">Imagenes</button>
+                                        <button class="filter-chip" data-editor-filter="video">Videos</button>
+                                    </div>
+                                </div>
+                                <div class="slide-editor__media-grid" id="media-editor-grid"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal__footer">
+                        <button class="btn btn--secondary close-modal">Cancelar</button>
+                        <button class="btn btn--primary" id="btn-save-slide">Aplicar Cambios</button>
+                    </div>
+                </div>
+            `);
 
             if (!overlay) return;
             let layoutData = getLayoutById(slide.layout_id) || LAYOUTS[0];
 
-            // Normalizar zones: convertir objetos viejos a arrays
             let zonesAssign = {};
             try {
                 const raw = JSON.parse(JSON.stringify(slide.zones || {}));
@@ -412,7 +464,6 @@ function bindPlaylistEditorEvents(store, router, playlist, slides, userId) {
                     else if (val && typeof val === 'object' && val.media_id) zonesAssign[key] = [val];
                     else zonesAssign[key] = [];
                 }
-                // Asegurar keys para todas las zonas del layout
                 for (const z of layoutData.zones) {
                     if (!zonesAssign[z.id]) zonesAssign[z.id] = [];
                 }
@@ -421,172 +472,274 @@ function bindPlaylistEditorEvents(store, router, playlist, slides, userId) {
             const canvas = overlay.querySelector(`#layout-canvas-${slideIdx}`);
             const selectLayout = overlay.querySelector('#slide-layout-select');
             const detailPanel = overlay.querySelector('#zone-detail-panel');
-            const sizeGuide = overlay.querySelector('#size-guide-text');
-            if (!canvas || !selectLayout || !detailPanel) return;
+            const mediaGrid = overlay.querySelector('#media-editor-grid');
+            const mediaSearch = overlay.querySelector('#media-editor-search');
+            const canvasHint = overlay.querySelector('#canvas-hint');
+            let activeZoneId = canvas?.dataset.activeZone || '';
+            let editorFilter = 'all';
 
             function renderCanvas() {
                 try {
+                    if (!canvas) return;
                     canvas.innerHTML = '';
                     canvas.style.background = layoutData.backgroundColor || '#000';
-                    let activeZoneId = canvas.dataset.activeZone || '';
                     (layoutData.zones || []).forEach(z => {
                         const items = Array.isArray(zonesAssign[z.id]) ? zonesAssign[z.id] : [];
                         const count = items.length;
-                        const hasContent = count > 0;
+                        const isActive = activeZoneId === z.id;
                         const zoneDiv = document.createElement('div');
-                        zoneDiv.className = `layout-canvas__zone ${hasContent ? 'layout-canvas__zone--assigned' : ''} ${activeZoneId === z.id ? 'layout-canvas__zone--active' : ''}`;
+                        zoneDiv.className = `layout-canvas__zone${count > 0 ? ' layout-canvas__zone--assigned' : ''}${isActive ? ' layout-canvas__zone--active' : ''}`;
                         zoneDiv.style.cssText = `left:${z.x}%;top:${z.y}%;width:${z.width}%;height:${z.height}%`;
-                        if (hasContent && items[0].media_url) {
+                        if (count > 0 && items[0].media_url) {
                             zoneDiv.innerHTML = `<img src="${items[0].media_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.6">`;
                         }
-                        zoneDiv.innerHTML += `<span class="layout-canvas__zone-label ${hasContent ? 'layout-canvas__zone-label--assigned' : ''}" style="position:absolute;bottom:4px;left:0;right:0">${z.name}${count > 0 ? ` — ${count} item(s)` : ''}${z.recommendedSize ? '<br><small>' + z.recommendedSize + '</small>' : ''}</span>`;
+                        zoneDiv.innerHTML += `<span class="layout-canvas__zone-label${count > 0 ? ' layout-canvas__zone-label--assigned' : ''}" style="position:absolute;bottom:4px;left:0;right:0;text-align:center">${z.name}${count > 0 ? ` \u00B7 ${count}` : ''}</span>`;
                         zoneDiv.addEventListener('click', () => selectZone(z.id));
                         canvas.appendChild(zoneDiv);
                     });
                 } catch(e) { console.error('Error renderizando canvas:', e); }
             }
 
-            function selectZone(zoneId) {
-                try {
-                    canvas.dataset.activeZone = zoneId;
-                    renderCanvas();
-                    const zone = layoutData.zones.find(z => z.id === zoneId);
-                    if (!zone) return;
-                    const items = Array.isArray(zonesAssign[zoneId]) ? zonesAssign[zoneId] : [];
-
-                    // Filtrar media compatible
-                    const filteredMedia = mediaItems.filter(m =>
-                        (zone.acceptsTypes && zone.acceptsTypes.includes(m.type)) ||
-                        (zone.acceptsTypes && zone.acceptsTypes.includes('image') && (m.type === 'image-story'))
-                    );
-
-                    // Lista de items asignados
-                    const itemsListHtml = items.length === 0
-                        ? '<div class="zone-assigner__empty">Sin contenido. Agrega items abajo.</div>'
-                        : `<div class="zone-items-list">${items.map((item, i) => `
-                            <div class="zone-item-row" data-item-idx="${i}">
-                                <div class="zone-item-row__thumb">${item.media_type === 'video' ? '<div style="background:#000;width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-size:10px">\u25B6</div>' : (item.media_url ? `<img src="${item.media_url}" alt="">` : '')}</div>
-                                <div class="zone-item-row__name">${item.media_name || 'Item ' + (i+1)}</div>
-                                <div class="zone-item-row__duration"><input type="number" value="${item.duration || 10}" min="1" max="300" data-zone-duration="${zoneId}" data-duration-idx="${i}" style="width:45px"> seg</div>
-                                <button class="zone-item-row__remove" data-zone-remove="${zoneId}" data-remove-idx="${i}" title="Quitar">\u2715</button>
-                            </div>
-                        `).join('')}</div>`;
-
-                    // Picker para agregar
-                    const pickerHtml = filteredMedia.length === 0
-                        ? '<div style="text-align:center;padding:12px;font-size:11px;color:var(--color-text-tertiary)">No hay contenido compatible</div>'
-                        : `<div class="zone-assigner__picker">${filteredMedia.map(m => {
-                            const alreadyInZone = items.some(item => item.media_id === m.id);
-                            return `<div class="zone-assigner__picker-item ${alreadyInZone ? 'zone-assigner__picker-item--selected' : ''}" data-pick-media="${m.id}" data-pick-zone="${zoneId}"><div class="zone-assigner__picker-thumb">${m.type === 'video' ? '<div style="background:#000;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.3rem">\u25B6</div>' : `<img src="${m.thumbnail_url || m.url}" alt="" loading="lazy">`}</div><div class="zone-assigner__picker-name">${m.name}${alreadyInZone ? ' \u2713' : ''}</div></div>`;
-                        }).join('')}</div>`;
-
-                    detailPanel.innerHTML = `
-                        <div class="zone-assigner__header">
-                            <div>
-                                <span class="zone-assigner__zone-name">${zone.name}</span>
-                                <span class="zone-assigner__zone-type">${zone.type} \u00B7 max ${zone.maxItems || 10} items</span>
-                            </div>
+            function renderMediaGrid(filterText = '') {
+                if (!mediaGrid) return;
+                const activeZone = layoutData.zones.find(z => z.id === activeZoneId);
+                let filtered = mediaItems;
+                if (editorFilter !== 'all') filtered = filtered.filter(m => m.type === editorFilter);
+                if (filterText) {
+                    const q = filterText.toLowerCase();
+                    filtered = filtered.filter(m => (m.name || '').toLowerCase().includes(q));
+                }
+                if (filtered.length === 0) {
+                    mediaGrid.innerHTML = '<div class="slide-editor__no-media">Sin archivos</div>';
+                    return;
+                }
+                mediaGrid.innerHTML = filtered.map(m => {
+                    const isAssigned = activeZoneId && Array.isArray(zonesAssign[activeZoneId]) && zonesAssign[activeZoneId].some(i => i.media_id === m.id);
+                    const isCompatible = !activeZone || (activeZone.acceptsTypes && activeZone.acceptsTypes.includes(m.type));
+                    return `<div class="slide-editor__media-item ${isAssigned ? 'slide-editor__media-item--assigned' : ''}" data-media-id="${m.id}" style="${!isCompatible ? 'opacity:0.4;cursor:not-allowed' : ''}">
+                        <div class="slide-editor__media-item-thumb ${m.type === 'video' ? 'slide-editor__media-item-thumb--video' : ''}">
+                            ${m.type === 'video'
+                                ? '<span>\u25B6</span>'
+                                : `<img src="${m.thumbnail_url || m.url}" alt="" loading="lazy">`}
                         </div>
-                        <p style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:8px">${zone.description}</p>
-                        <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:12px;background:var(--color-bg-secondary);padding:6px 8px;border-radius:4px">
-                            <strong>\u{1F4D0} ${zone.resolution || ''}</strong> — ${zone.recommendedSize || ''}<br>${zone.tips || ''}
-                        </div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                            <span style="font-size:12px;font-weight:600">Items asignados (${items.length})</span>
-                            ${items.length > 0 ? `<button class="btn btn--ghost btn--sm" style="font-size:10px;color:var(--color-error)" data-clear-zone="${zoneId}">Limpiar todo</button>` : ''}
-                        </div>
-                        ${itemsListHtml}
-                        <button class="zone-add-btn" style="margin-top:8px">+ Agregar contenido a ${zone.name}</button>
-                        <div style="margin-top:8px">${pickerHtml}</div>`;
+                        <div class="slide-editor__media-item-name" title="${m.name}">${m.name}</div>
+                    </div>`;
+                }).join('');
 
-                    // Bind: click en picker item para agregar/quitar
-                    detailPanel.querySelectorAll('.zone-assigner__picker-item').forEach(pickItem => {
-                        pickItem.addEventListener('click', () => {
-                            try {
-                                const mediaId = pickItem.dataset.pickMedia;
-                                const zId = pickItem.dataset.pickZone;
-                                const existingIdx = zonesAssign[zId].findIndex(i => i.media_id === mediaId);
-                                if (existingIdx >= 0) {
-                                    zonesAssign[zId].splice(existingIdx, 1);
-                                } else {
-                                    if (zonesAssign[zId].length >= (zone.maxItems || 10)) {
-                                        showToast(`Maximo ${zone.maxItems} items en esta zona`, 'warning');
-                                        return;
-                                    }
-                                    const media = mediaItems.find(m => m.id === mediaId);
-                                    if (media) {
-                                        zonesAssign[zId].push({
-                                            media_id: media.id,
-                                            duration: media.type === 'video' ? (media.duration || 15) : 8,
-                                            media_url: media.thumbnail_url || media.url,
-                                            media_name: media.name,
-                                            media_type: media.type
-                                        });
-                                    }
-                                }
-                                renderCanvas();
-                                selectZone(zId);
-                            } catch(e) { console.error('Error en pick:', e); }
-                        });
-                    });
-
-                    // Bind: remover item individual
-                    detailPanel.querySelectorAll('[data-zone-remove]').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const zId = btn.dataset.zoneRemove;
-                            const idx = parseInt(btn.dataset.removeIdx);
-                            if (zonesAssign[zId] && idx >= 0 && idx < zonesAssign[zId].length) {
-                                zonesAssign[zId].splice(idx, 1);
-                                renderCanvas();
-                                selectZone(zId);
+                mediaGrid.querySelectorAll('.slide-editor__media-item').forEach(el => {
+                    el.addEventListener('click', () => {
+                        if (!activeZoneId) {
+                            showToast('Selecciona primero una zona en el canvas', 'warning');
+                            return;
+                        }
+                        const mediaId = el.dataset.mediaId;
+                        const zone = layoutData.zones.find(z => z.id === activeZoneId);
+                        if (!zone) return;
+                        const isCompatible = zone.acceptsTypes && zone.acceptsTypes.includes(
+                            mediaItems.find(m => m.id === mediaId)?.type
+                        );
+                        if (!isCompatible) {
+                            showToast('Este tipo de contenido no es compatible con esta zona', 'warning');
+                            return;
+                        }
+                        const existingIdx = zonesAssign[activeZoneId].findIndex(i => i.media_id === mediaId);
+                        if (existingIdx >= 0) {
+                            zonesAssign[activeZoneId].splice(existingIdx, 1);
+                        } else {
+                            if (zonesAssign[activeZoneId].length >= (zone.maxItems || 10)) {
+                                showToast(`Maximo ${zone.maxItems} items en esta zona`, 'warning');
+                                return;
                             }
-                        });
-                    });
-
-                    // Bind: limpiar toda la zona
-                    const clearAllBtn = detailPanel.querySelector('[data-clear-zone]');
-                    if (clearAllBtn) clearAllBtn.addEventListener('click', () => {
-                        zonesAssign[zoneId] = [];
+                            const media = mediaItems.find(m => m.id === mediaId);
+                            if (media) {
+                                zonesAssign[activeZoneId].push({
+                                    media_id: media.id,
+                                    duration: media.type === 'video' ? (media.duration || 15) : 8,
+                                    media_url: media.thumbnail_url || media.url,
+                                    media_name: media.name,
+                                    media_type: media.type
+                                });
+                            }
+                        }
                         renderCanvas();
-                        selectZone(zoneId);
+                        selectZonePanel(activeZoneId);
+                        renderMediaGrid(mediaSearch?.value || '');
                     });
+                });
+            }
 
-                    // Bind: cambiar duracion de item
-                    detailPanel.querySelectorAll('[data-zone-duration]').forEach(input => {
-                        input.addEventListener('change', () => {
-                            const zId = input.dataset.zoneDuration;
-                            const idx = parseInt(input.dataset.durationIdx);
-                            if (zonesAssign[zId] && zonesAssign[zId][idx]) {
-                                zonesAssign[zId][idx].duration = parseInt(input.value) || 10;
-                            }
-                        });
+            function selectZone(zoneId) {
+                activeZoneId = zoneId;
+                canvas.dataset.activeZone = zoneId;
+                renderCanvas();
+                selectZonePanel(zoneId);
+                renderMediaGrid(mediaSearch?.value || '');
+                if (canvasHint) canvasHint.textContent = '';
+            }
+
+            function selectZonePanel(zoneId) {
+                if (!detailPanel) return;
+                const zone = layoutData.zones.find(z => z.id === zoneId);
+                if (!zone) {
+                    detailPanel.innerHTML = '<div class="slide-editor__empty-hint">Selecciona una zona del canvas para editar su contenido</div>';
+                    return;
+                }
+                const items = Array.isArray(zonesAssign[zoneId]) ? zonesAssign[zoneId] : [];
+
+                detailPanel.innerHTML = `
+                    <div class="slide-editor__zone-panel-title">${zone.name}</div>
+                    <div class="slide-editor__zone-panel-subtitle">${zone.type} \u00B7 max ${zone.maxItems || 10} items</div>
+                    <div class="slide-editor__zone-panel-stats">
+                        \u{1F4D0} ${zone.resolution || ''} \u00B7 ${zone.recommendedSize || ''}<br>
+                        \u{1F4A1} ${zone.tips || zone.description || ''}
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                        <span style="font-size:13px;font-weight:600">Contenido asignado (${items.length})</span>
+                        ${items.length > 0 ? `<button class="btn btn--ghost btn--sm" style="font-size:11px;color:var(--color-error)" data-clear-zone="${zoneId}">Limpiar</button>` : ''}
+                    </div>
+                    ${items.length === 0
+                        ? '<div style="font-size:12px;color:var(--color-text-tertiary);text-align:center;padding:12px">Sin contenido. Usa la biblioteca de la derecha para agregar.</div>'
+                        : `<div>${items.map((item, i) => `
+                            <div class="slide-editor__zone-item">
+                                <span class="slide-editor__zone-item-drag">\u2630</span>
+                                <div class="slide-editor__zone-item-thumb">
+                                    ${item.media_type === 'video'
+                                        ? '<div style="background:#000;width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-size:10px">\u25B6</div>'
+                                        : (item.media_url ? `<img src="${item.media_url}" alt="">` : '')}
+                                </div>
+                                <span class="slide-editor__zone-item-name" title="${item.media_name || ''}">${item.media_name || 'Item ' + (i+1)}</span>
+                                <div class="slide-editor__zone-item-dur">
+                                    <input type="number" value="${item.duration || 10}" min="1" max="300" data-zone-duration="${zoneId}" data-duration-idx="${i}"> seg
+                                </div>
+                                <button class="slide-editor__zone-item-del" data-zone-remove="${zoneId}" data-remove-idx="${i}" title="Quitar">\u2715</button>
+                            </div>
+                        `).join('')}</div>`}
+                `;
+
+                // Bind: items
+                detailPanel.querySelectorAll('[data-zone-remove]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const zId = btn.dataset.zoneRemove;
+                        const idx = parseInt(btn.dataset.removeIdx);
+                        if (zonesAssign[zId] && idx >= 0 && idx < zonesAssign[zId].length) {
+                            zonesAssign[zId].splice(idx, 1);
+                            renderCanvas();
+                            selectZonePanel(zId);
+                            renderMediaGrid(mediaSearch?.value || '');
+                        }
                     });
-
-                } catch(e) { console.error('Error en selectZone:', e); }
+                });
+                const clearBtn = detailPanel.querySelector('[data-clear-zone]');
+                if (clearBtn) clearBtn.addEventListener('click', () => {
+                    zonesAssign[zoneId] = [];
+                    renderCanvas();
+                    selectZonePanel(zoneId);
+                    renderMediaGrid(mediaSearch?.value || '');
+                });
+                detailPanel.querySelectorAll('[data-zone-duration]').forEach(input => {
+                    input.addEventListener('change', () => {
+                        const zId = input.dataset.zoneDuration;
+                        const idx = parseInt(input.dataset.durationIdx);
+                        if (zonesAssign[zId] && zonesAssign[zId][idx]) {
+                            zonesAssign[zId][idx].duration = parseInt(input.value) || 10;
+                        }
+                    });
+                });
             }
 
             renderCanvas();
+            renderMediaGrid();
 
-            selectLayout.addEventListener('change', () => {
-                try {
-                    layoutData = getLayoutById(selectLayout.value) || LAYOUTS[0];
-                    zonesAssign = {};
-                    for (const z of layoutData.zones) zonesAssign[z.id] = [];
-                    slide.layout_id = selectLayout.value;
-                    canvas.dataset.activeZone = '';
-                    renderCanvas();
-                    detailPanel.innerHTML = '<div style="font-size:12px;color:var(--color-text-tertiary);text-align:center;padding:20px">Selecciona una zona para asignar contenido</div>';
-                    if (sizeGuide && layoutData.sizeGuide) {
-                        sizeGuide.innerHTML = Object.entries(layoutData.sizeGuide).map(([z,g]) => '<strong>' + z + ':</strong> ' + g).join('<br>');
+            // Cambio de layout con confirmacion
+            selectLayout?.addEventListener('change', () => {
+                const newLayoutId = selectLayout.value;
+                const hasContent = Object.values(zonesAssign).some(arr => Array.isArray(arr) && arr.length > 0);
+                if (hasContent) {
+                    if (!confirm('Cambiar el layout eliminara el contenido asignado a las zonas. Deseas continuar?')) {
+                        selectLayout.value = layoutData.id;
+                        return;
                     }
-                } catch(e) { console.error('Error cambiando layout:', e); }
+                }
+                layoutData = getLayoutById(newLayoutId) || LAYOUTS[0];
+                zonesAssign = {};
+                for (const z of layoutData.zones) zonesAssign[z.id] = [];
+                activeZoneId = '';
+                if (canvas) canvas.dataset.activeZone = '';
+                renderCanvas();
+                selectZonePanel(null);
+                renderMediaGrid();
+                if (canvasHint) canvasHint.textContent = 'Haz clic en una zona para editar su contenido';
+            });
+
+            // Busqueda de media
+            mediaSearch?.addEventListener('input', (() => {
+                let timer;
+                return () => {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => renderMediaGrid(mediaSearch.value), 250);
+                };
+            })());
+
+            // Filtros de media
+            overlay.querySelectorAll('[data-editor-filter]').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    overlay.querySelectorAll('[data-editor-filter]').forEach(c => c.classList.remove('filter-chip--active'));
+                    chip.classList.add('filter-chip--active');
+                    editorFilter = chip.dataset.editorFilter;
+                    renderMediaGrid(mediaSearch?.value || '');
+                });
+            });
+
+            // Agregar contenido desde URL
+            overlay.querySelector('#btn-add-url')?.addEventListener('click', () => {
+                if (!activeZoneId) {
+                    showToast('Selecciona primero una zona en el canvas', 'warning');
+                    return;
+                }
+                const zone = layoutData.zones.find(z => z.id === activeZoneId);
+                if (!zone) return;
+
+                const urlInput = overlay.querySelector('#url-source-input');
+                const nameInput = overlay.querySelector('#url-name-input');
+                const durInput = overlay.querySelector('#url-duration-input');
+                const url = (urlInput?.value || '').trim();
+                const name = (nameInput?.value || '').trim() || 'URL externa';
+                const duration = parseInt(durInput?.value) || 10;
+
+                if (!url) {
+                    showToast('Ingresa una URL valida', 'warning');
+                    return;
+                }
+
+                // Detectar tipo: YouTube vs imagen vs video directo
+                const isYoutube = /youtube\.com|youtu\.be/i.test(url);
+                const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$)/i.test(url);
+                const mediaType = isYoutube || (!isImage && /\.(mp4|webm|mov|avi|mkv)(\?|$)/i.test(url)) ? 'video' : 'image-story';
+
+                if (zonesAssign[activeZoneId].length >= (zone.maxItems || 10)) {
+                    showToast(`Maximo ${zone.maxItems} items en esta zona`, 'warning');
+                    return;
+                }
+
+                zonesAssign[activeZoneId].push({
+                    media_url: url,
+                    media_name: name,
+                    media_type: mediaType,
+                    source: isYoutube ? 'youtube' : 'url',
+                    duration,
+                });
+
+                urlInput.value = '';
+                if (nameInput) nameInput.value = '';
+                renderCanvas();
+                selectZonePanel(activeZoneId);
+                showToast('Contenido agregado desde URL', 'success');
             });
 
             overlay.querySelector('.modal__close, .close-modal')?.addEventListener('click', () => closeModal(overlay));
 
             overlay.querySelector('#btn-save-slide')?.addEventListener('click', () => {
                 try {
-                    // Calcular duracion total del slide (la zona mas larga)
                     let maxDuration = 10;
                     for (const items of Object.values(zonesAssign)) {
                         if (Array.isArray(items)) {
